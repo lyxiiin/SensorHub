@@ -26,11 +26,6 @@ class _MainNavigationPageState extends State<MainNavigationPage >{
     "assets/icons/icon_notifications.svg",
     "assets/icons/icon_profile.svg",
   ];
-  // final List<String> tabActiveIcons = [
-  //   "assets/icons/icon_device.png",
-  //   "assets/icons/icon_notifications.png",
-  //   "assets/icons/icon_profile.png",
-  // ];
   @override
   void initState() {
     super.initState();
@@ -43,17 +38,23 @@ class _MainNavigationPageState extends State<MainNavigationPage >{
   }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
       appBar: null,
+      // primary: false, //顶部延申
+      backgroundColor: colorScheme.surface,
       body: IndexedStack(index: _currentIndex,children: tabItems,),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: colorScheme.surface,
         iconSize: 24.r,
         selectedFontSize: 14.sp,
         unselectedFontSize: 12.sp,
-        selectedItemColor: Color(0xFF07C160),
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
-        items: _barItemList(),
+        items: _barItemList(colorScheme),
         onTap: (index){
           if(_currentIndex == index){
             return;
@@ -64,8 +65,7 @@ class _MainNavigationPageState extends State<MainNavigationPage >{
       ),
     );
   }
-
-  List<BottomNavigationBarItem> _barItemList(){
+  List<BottomNavigationBarItem> _barItemList(ColorScheme colorScheme){
     List<BottomNavigationBarItem> items = [];
     for(var i = 0; i < tabItems.length;i++){
       items.add(
@@ -75,13 +75,14 @@ class _MainNavigationPageState extends State<MainNavigationPage >{
                   tabIcons[i],
                   width: 24.r,
                   height: 24.r,
-                  colorFilter: ColorFilter.mode(Color(0xFF07C160), BlendMode.srcIn),
+                  colorFilter: ColorFilter.mode(colorScheme.primary, BlendMode.srcIn),
                 );
               }),
               icon: SvgPicture.asset(
                 tabIcons[i],
                 width: 24.r,
                 height: 24.r,
+                colorFilter: ColorFilter.mode(colorScheme.onSurfaceVariant, BlendMode.srcIn),
               ),
               label: tabLabels[i]
           )

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
+import 'package:sensor_hub/ui/device/widgets/device_info_card.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key});
@@ -83,29 +84,24 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   Widget _selectMenu(ColorScheme colorScheme) {
     return Consumer<DeviceVM>(builder: (context, vm, child) {
-      // 为下拉菜单区域定义合适的背景和边框色
-      final containerColor = colorScheme.surface; // 或 surfaceVariant 更柔和
-      final borderColor = colorScheme.outline.withValues(alpha: 0.5); // outline 是 M3 推荐边框色
-      final shadowColor = colorScheme.shadow.withValues(alpha: 0.1); // 柔和阴影
-
       return Container(
         padding: EdgeInsets.only(left: 16.w, right: 16.w),
         width: double.infinity,
         height: 48.h,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: containerColor,
+          color: colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(8.r),
           boxShadow: [
             BoxShadow(
-              color: shadowColor,
+              color: colorScheme.shadow.withValues(alpha: 0.1),
               spreadRadius: 0.5,
               blurRadius: 3,
             ),
           ],
           border: Border.all(
             width: 0.5.r,
-            color: borderColor,
+            color: colorScheme.outline.withValues(alpha: 0.5),
           ),
         ),
         child: DropdownButton<String>(
@@ -203,7 +199,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
         children: [
           SvgPicture.asset(
             icon,
-            width: 32.w,
             height: 32.h,
             colorFilter: ColorFilter.mode(colorScheme.onSurfaceVariant, BlendMode.srcIn),
           ),
