@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 
 import '../ui/main_navigation_page.dart';
 class Routes{
@@ -7,6 +8,8 @@ class Routes{
     // 首页
       case RoutePath.main:
         return pageRoute(MainNavigationPage(), settings: setting);
+      case RoutePath.themeSelection:
+        return pageRoute(ThemeSelectionPage());
     }
     return pageRoute(
         Scaffold(
@@ -37,4 +40,6 @@ class RoutePath{
   // 首页
   static const String main = "/";
 
+  // 主题设置页
+  static const String themeSelection = "ThemeSelectionPage";
 }
