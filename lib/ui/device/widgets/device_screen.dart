@@ -274,7 +274,18 @@ class _DeviceScreenState extends State<DeviceScreen> {
             )
         );
       }else{
-        return SizedBox();
+        return ListView.builder(
+          itemCount: vm.deviceCount,
+          itemBuilder: (context,index){
+            return DeviceInfoCard(
+              colorScheme: colorScheme,
+              dateList: [],
+              onTap: (){
+
+              },
+            );
+          },
+        );
       }
     });
   }
