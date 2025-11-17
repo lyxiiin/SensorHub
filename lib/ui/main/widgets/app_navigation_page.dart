@@ -8,17 +8,17 @@ import 'package:sensor_hub/ui/profile/widgets/profile_screen.dart';
 
 import 'navigation_bar_item.dart';
 
-class MainNavigationPage extends StatefulWidget{
-  const MainNavigationPage({super.key});
+class AppNavigationPage extends StatefulWidget{
+  const AppNavigationPage({super.key});
 
   @override
   State<StatefulWidget> createState() {
-    return _MainNavigationPageState();
+    return _AppNavigationPageState();
   }
 
 }
 
-class _MainNavigationPageState extends State<MainNavigationPage >{
+class _AppNavigationPageState extends State<AppNavigationPage >{
   int _currentIndex = 0;
   final List<Widget> tabItems = [];
   final List<String> tabLabels = ["设备","消息","我的"];
