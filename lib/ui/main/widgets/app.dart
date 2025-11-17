@@ -5,15 +5,21 @@ import 'package:provider/provider.dart';
 import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/core/themes/app_theme.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
+import 'package:sensor_hub/ui/profile/view_model/profile_vm.dart';
 
 class MyApp extends StatelessWidget{
-  const MyApp({super.key});
+  final String theme;
+  const MyApp({
+    super.key,
+    required this.theme
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => DeviceVM()),
+        ChangeNotifierProvider(create: (context) => ProfileVM()),
       ],
       child: OKToast(
         child: ScreenUtilInit(
@@ -22,7 +28,7 @@ class MyApp extends StatelessWidget{
             return MaterialApp(
               theme: AppThemes.lightTheme,
               darkTheme: AppThemes.darkTheme,
-              themeMode: ThemeMode.light,
+              themeMode: theme == "light" ? ThemeMode.light : theme == "dart" ? ThemeMode.dark : ThemeMode.system,
               onGenerateRoute: Routes.generateRoute,
               initialRoute: RoutePath.main,
             );

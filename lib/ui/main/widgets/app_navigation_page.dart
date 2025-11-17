@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sensor_hub/ui/device/widgets/device_screen.dart';
-import 'package:sensor_hub/ui/navigation_bar_item.dart';
 import 'package:sensor_hub/ui/notification/widgets/notification_screen.dart';
 import 'package:sensor_hub/ui/profile/widgets/profile_screen.dart';
+
+import 'navigation_bar_item.dart';
 
 class MainNavigationPage extends StatefulWidget{
   const MainNavigationPage({super.key});
