@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 
-import '../ui/main_navigation_page.dart';
+import '../ui/main/widgets/app_navigation_page.dart';
 class Routes{
   static Route<dynamic> generateRoute(RouteSettings setting) {
     switch(setting.name){
     // 首页
       case RoutePath.main:
-        return pageRoute(MainNavigationPage(), settings: setting);
+        return pageRoute(AppNavigationPage(), settings: setting);
       case RoutePath.themeSelection:
         return pageRoute(ThemeSelectionPage());
     }
