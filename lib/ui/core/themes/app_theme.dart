@@ -5,7 +5,7 @@ class AppThemes {
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6750A4), // Material 3 推荐的主色（紫色）
+      seedColor: const Color(0xFF6750A4),
       brightness: Brightness.light,
     ),
     appBarTheme: const AppBarTheme(
@@ -13,7 +13,7 @@ class AppThemes {
       foregroundColor: Colors.black,
       elevation: 2,
     ),
-    scaffoldBackgroundColor: Colors.white,
+    scaffoldBackgroundColor: Colors.grey[200],
     textTheme: Typography.material2021().englishLike, // 可选：保持一致字体风格
   );
 

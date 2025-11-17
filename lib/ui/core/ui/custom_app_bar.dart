@@ -5,7 +5,7 @@ AppBar createAppBar({
   required String title,
   required GestureTapCallback onBack,
   required ColorScheme colorScheme,
-  required GestureTapCallback onFinish
+  required GestureTapCallback? onFinish
 }){
   return AppBar(
     centerTitle: true,
@@ -23,14 +23,14 @@ AppBar createAppBar({
       ),
     ),
     actions: [
-      TextButton(
-        style: TextButton.styleFrom(
-          foregroundColor: colorScheme.primary,
-          textStyle: TextStyle(fontSize: 18.sp),
-        ),
-        onPressed: onFinish,
-        child: Text('完成'),
-      )
+      // TextButton(
+      //   style: TextButton.styleFrom(
+      //     foregroundColor: colorScheme.primary,
+      //     textStyle: TextStyle(fontSize: 18.sp),
+      //   ),
+      //   onPressed: onFinish,
+      //   child: Text('完成'),
+      // )
     ],
   );
 }

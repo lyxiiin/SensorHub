@@ -43,7 +43,6 @@ class _SettingItemState extends State<SettingItem>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  late Animation<Color?> _colorAnimation;
 
   @override
   void initState() {
@@ -58,12 +57,7 @@ class _SettingItemState extends State<SettingItem>
     ).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _colorAnimation = ColorTween(
-      begin: widget.colorScheme.surfaceContainerHigh,
-      end: widget.colorScheme.surfaceContainerHigh.withValues(alpha: 0.7),
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+
   }
 
   @override
@@ -104,7 +98,7 @@ class _SettingItemState extends State<SettingItem>
               height: 48.h,
               decoration: widget.showBottomLine
                   ? BoxDecoration(
-                color: _colorAnimation.value,
+                color: Colors.transparent,
                 border: Border(
                   bottom: BorderSide(
                     color: widget.colorScheme.outline.withValues(alpha: 0.5),
@@ -113,7 +107,7 @@ class _SettingItemState extends State<SettingItem>
                 ),
               )
                   : BoxDecoration(
-                color: _colorAnimation.value,
+                color: Colors.transparent,
               ),
               child: Row(
                 children: [
@@ -161,9 +155,8 @@ class _SettingItemState extends State<SettingItem>
                     ),
                   if (widget.showSwitchButton)
                     Switch(
-                      activeColor: widget.colorScheme.primary,
-                      activeTrackColor:
-                      widget.colorScheme.primary.withValues(alpha: 0.5),
+                      activeThumbColor: widget.colorScheme.primary,
+                      activeTrackColor: widget.colorScheme.primary.withValues(alpha: 0.5),
                       inactiveThumbColor: widget.colorScheme.onSurface
                           .withValues(alpha: 0.38),
                       inactiveTrackColor: widget.colorScheme.surface,
