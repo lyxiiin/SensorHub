@@ -127,8 +127,8 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
         color: colorScheme.surface,
         child: RadioGroup<ThemeMode>(
           groupValue: vm.themeModelSelectedValue,
-          onChanged: (ThemeMode? value){
-            vm.changedThemeModelSelectedValue(value);
+          onChanged: (ThemeMode? value) async {
+            await vm.changedThemeModelSelectedValue(value);
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,

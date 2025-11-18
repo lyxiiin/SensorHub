@@ -7,17 +7,38 @@ import 'package:sensor_hub/ui/core/themes/app_theme.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/profile/view_model/profile_vm.dart';
 import '../app_vm.dart';
+import 'package:sensor_hub/data/repositories/user_config_repository_impl.dart';
 
-class MyApp extends StatelessWidget{
-  const MyApp({super.key,});
+class MyApp extends StatefulWidget{
+  final UserConfigRepositoryImpl userConfig;
+  
+  const MyApp({
+    super.key,
+    required this.userConfig,
+  });
 
+  @override
+  State<StatefulWidget> createState() {
+    return _MyAppState();
+  }
+
+}
+class _MyAppState extends State<MyApp>{
+  late AppVM _appVM;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _appVM = AppVM();
+    _appVM.themeModelSelectedValue = widget.userConfig.theme;
+  }
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => DeviceVM()),
         ChangeNotifierProvider(create: (context) => ProfileVM()),
-        ChangeNotifierProvider(create: (context) => AppVM()),
+        ChangeNotifierProvider.value(value: _appVM),
       ],
       child: OKToast(
         child: ScreenUtilInit(
