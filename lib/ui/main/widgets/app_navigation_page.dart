@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -6,6 +5,7 @@ import 'package:sensor_hub/ui/device/widgets/device_screen.dart';
 import 'package:sensor_hub/ui/notification/widgets/notification_screen.dart';
 import 'package:sensor_hub/ui/profile/widgets/profile_screen.dart';
 
+import '../../../l10n/app_localizations.dart';
 import 'navigation_bar_item.dart';
 
 class AppNavigationPage extends StatefulWidget{
@@ -21,7 +21,7 @@ class AppNavigationPage extends StatefulWidget{
 class _AppNavigationPageState extends State<AppNavigationPage >{
   int _currentIndex = 0;
   final List<Widget> tabItems = [];
-  final List<String> tabLabels = ["设备","消息","我的"];
+  final List<String> tabLabels = [];
   final List<String> tabIcons = [
     "assets/icons/icon_device.svg",
     "assets/icons/icon_notifications.svg",
@@ -39,8 +39,14 @@ class _AppNavigationPageState extends State<AppNavigationPage >{
   }
   @override
   Widget build(BuildContext context) {
+    final appText = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    tabLabels.add(appText.tab_device);
+    tabLabels.add(appText.tab_notifications);
+    tabLabels.add(appText.tab_profile);
+
+
     return Scaffold(
       appBar: null,
       // primary: false, //顶部延申

@@ -1,0 +1,28 @@
+{
+  "language": "言語",
+
+  "tab_device": "デバイス",
+  "tab_notifications": "通知",
+  "tab_profile": "マイページ",
+
+  "automatic": "システムに従う",
+
+  "device_screen_overLimit": "上限超過",
+  "device_screen_lowBattery": "電池切れ",
+  "device_screen_offline": "オフライン",
+  "device_screen_upgradeable": "更新あり",
+  "device_screen_prompt": "最初のデバイスを追加してください",
+  "device_screen_unknown_sensor": "不明なセンサー",
+  "device_screen_minutes_ago": "分前",
+
+  "profile_screen_personal_info": "個人情報",
+  "profile_screen_notification_settings": "通知設定",
+  "profile_screen_degree_unit": "単位（度数）",
+  "profile_screen_language": "言語",
+  "profile_screen_appearance": "外観",
+  "profile_screen_light_mode": "ライトモード",
+  "profile_screen_dark_mode": "ダークモード",
+  "profile_screen_follow_system": "自動",
+
+  "common_ui_finish": "完了"
+}

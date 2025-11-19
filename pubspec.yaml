@@ -29,6 +29,10 @@ dependencies:
   flutter_svg: ^2.2.2
   # 键值对存储
   shared_preferences: ^2.5.3
+  # 国际化
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
 dev_dependencies:
   flutter_test:
@@ -39,6 +43,10 @@ dev_dependencies:
 flutter:
 
   uses-material-design: true
+
+  # L10N
+  generate: true
+
   assets:
     - assets/icons/
     - assets/images/

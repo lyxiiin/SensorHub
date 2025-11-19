@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 
 import '../ui/main/widgets/app_navigation_page.dart';
+import '../ui/profile/widgets/language_selection_page.dart';
 class Routes{
   static Route<dynamic> generateRoute(RouteSettings setting) {
     switch(setting.name){
@@ -10,6 +11,8 @@ class Routes{
         return pageRoute(AppNavigationPage(), settings: setting);
       case RoutePath.themeSelection:
         return pageRoute(ThemeSelectionPage());
+      case RoutePath.languageSelection:
+        return pageRoute(LanguageSelectionPage());
     }
     return pageRoute(
         Scaffold(
@@ -42,4 +45,7 @@ class RoutePath{
 
   // 主题设置页
   static const String themeSelection = "ThemeSelectionPage";
+
+  // 语言设置页
+  static const String languageSelection = "LanguageSelectionPage";
 }

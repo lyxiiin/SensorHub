@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/device/widgets/device_info_card.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key});
 
@@ -23,6 +25,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final appText = AppLocalizations.of(context);
     return SafeArea(
       child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -43,11 +46,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 children: [
                   _titleBar(colorScheme),
                   _selectMenu(colorScheme),
-                  deviceStateCards(colorScheme)
+                  deviceStateCards(colorScheme,appText)
                 ],
               ),
             ),
-            deviceList(colorScheme),
+            deviceList(colorScheme,appText),
           ],
         ),
     );
@@ -134,7 +137,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       );
     });
   }
-  Widget deviceStateCards(ColorScheme colorScheme){
+  Widget deviceStateCards(ColorScheme colorScheme, AppLocalizations appText){
     return Container(
       width: double.infinity,
       color: colorScheme.surface,
@@ -143,25 +146,25 @@ class _DeviceScreenState extends State<DeviceScreen> {
         children: [
           deviceStateCardItem(
             icon: "assets/icons/icon_over_limit.svg",
-            title: "超限",
+            title: appText.device_screen_overLimit,
             deviceCount: 0,
             colorScheme: colorScheme
           ),
           deviceStateCardItem(
               icon: "assets/icons/icon_low_battery.svg",
-              title: "低电",
+              title: appText.device_screen_lowBattery,
               deviceCount: 0,
               colorScheme: colorScheme
           ),
           deviceStateCardItem(
               icon: "assets/icons/icon_offline.svg",
-              title: "离线",
+              title: appText.device_screen_offline,
               deviceCount: 0,
               colorScheme: colorScheme
           ),
           deviceStateCardItem(
               icon: "assets/icons/icon_upgradeable.svg",
-              title: "待升级",
+              title: appText.device_screen_upgradeable,
               deviceCount: 0,
               colorScheme: colorScheme
           ),
@@ -226,7 +229,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       ),
     );
   }
-  Widget deviceList(ColorScheme colorScheme){
+  Widget deviceList(ColorScheme colorScheme,AppLocalizations appText){
     return Consumer<DeviceVM>(builder: (context,vm,child){
       if(vm.deviceCount == 0){
         return Expanded(
@@ -262,7 +265,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     ),
                   ),
                   Text(
-                    "添加你的第一台设备",
+                    appText.device_screen_prompt,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize:16.sp,

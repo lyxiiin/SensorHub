@@ -1,0 +1,29 @@
+{
+  "language": "语言",
+
+  "tab_device": "设备",
+  "tab_notifications": "通知",
+  "tab_profile": "我",
+
+  "automatic": "跟随系统",
+
+  "device_screen_overLimit": "超限",
+  "device_screen_lowBattery": "低电",
+  "device_screen_offline": "离线",
+  "device_screen_upgradeable": "待升级",
+  "device_screen_prompt": "添加你的第一台设备",
+  "device_screen_unknown_sensor": "未知传感器",
+  "device_screen_minutes_ago": "分钟前",
+
+  "profile_screen_personal_info": "个人资料",
+  "profile_screen_notification_settings": "通知设置",
+  "profile_screen_degree_unit": "度数单位",
+  "profile_screen_language": "语言",
+  "profile_screen_appearance": "外观",
+  "profile_screen_light_mode": "浅色模式",
+  "profile_screen_dark_mode": "深色模式",
+  "profile_screen_follow_system": "跟随系统",
+
+
+  "common_ui_finish": "完成"
+}

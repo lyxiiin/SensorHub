@@ -9,7 +9,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await SPUtil.init();
-    UserConfigRepositoryImpl userConfig = UserConfigRepositoryImpl();
+    UserConfigRepository userConfig = UserConfigRepository();
     if(userConfig.checkFirstRun()){
       await userConfig.initializeConfig();
     }

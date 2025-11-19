@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 AppBar createAppBar({
   required String title,
   required GestureTapCallback onBack,
   required ColorScheme colorScheme,
-  required GestureTapCallback? onFinish
+  required GestureTapCallback? onFinish,
+  required AppLocalizations appText
 }){
   return AppBar(
     centerTitle: true,
@@ -15,7 +18,7 @@ AppBar createAppBar({
       onPressed: onBack,
     ),
     title: Text(
-      "外观",
+      appText.profile_screen_appearance,
       style: TextStyle(
         fontSize: 20.sp,
         fontWeight: FontWeight.bold,
@@ -23,14 +26,14 @@ AppBar createAppBar({
       ),
     ),
     actions: [
-      // TextButton(
-      //   style: TextButton.styleFrom(
-      //     foregroundColor: colorScheme.primary,
-      //     textStyle: TextStyle(fontSize: 18.sp),
-      //   ),
-      //   onPressed: onFinish,
-      //   child: Text('完成'),
-      // )
+      TextButton(
+        style: TextButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+          textStyle: TextStyle(fontSize: 18.sp),
+        ),
+        onPressed: onFinish,
+        child: Text('完成'),
+      )
     ],
   );
 }

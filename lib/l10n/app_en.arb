@@ -1,0 +1,27 @@
+{
+  "language": "Language",
+  "tab_device": "Device",
+  "tab_notifications": "Notifications",
+  "tab_profile": "Profile",
+
+  "automatic": "Automatic",
+
+  "device_screen_overLimit": "Over Limit",
+  "device_screen_lowBattery": "Low Battery",
+  "device_screen_offline": "Offline",
+  "device_screen_upgradeable": "Upgradable",
+  "device_screen_prompt": "Add your first device",
+  "device_screen_unknown_sensor": "Unknown Sensor",
+  "device_screen_minutes_ago": "minutes ago",
+
+  "profile_screen_personal_info": "Personal Info",
+  "profile_screen_notification_settings": "Notification Settings",
+  "profile_screen_degree_unit": "Degree Unit",
+  "profile_screen_language": "Language",
+  "profile_screen_appearance": "Appearance",
+  "profile_screen_light_mode": "Light Mode",
+  "profile_screen_dark_mode": "Dark Mode",
+  "profile_screen_follow_system": "System",
+
+  "common_ui_finish": "Finish"
+}

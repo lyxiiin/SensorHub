@@ -1,6 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../../../l10n/app_localizations.dart';
 
 class DeviceInfoCard extends StatelessWidget{
   final ColorScheme colorScheme;
@@ -20,6 +21,7 @@ class DeviceInfoCard extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
+    final appText = AppLocalizations.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -42,7 +44,7 @@ class DeviceInfoCard extends StatelessWidget{
                 ),
                 SizedBox(width: 8.w,),
                 Text(
-                  name ?? "未知传感器",
+                  name ?? appText.device_screen_unknown_sensor,
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: colorScheme.onSurfaceVariant
@@ -50,7 +52,7 @@ class DeviceInfoCard extends StatelessWidget{
                 ),
                 SizedBox.expand(),
                 Text(
-                  "${time ?? "0"}分钟前",
+                  "${time ?? "0"}${appText.device_screen_minutes_ago}",
                   style: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),fontSize: 12.sp),
                 )
               ],

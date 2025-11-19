@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/route/route_utils.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../core/ui/custom_app_bar.dart';
 import '../../main/app_vm.dart';
 
@@ -19,15 +20,19 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final appText = AppLocalizations.of(context);
     return Scaffold(
       appBar: createAppBar(
-          title: '外观',
+          title: appText.profile_screen_appearance,
+          appText: appText,
           onBack: () {
             RouteUtils.pop(context);
           },
           colorScheme: colorScheme,
           onFinish: () {
-
+            final appVM = Provider.of<AppVM>(context, listen: false);
+            appVM.changedThemeModelSelectedValue();
+            RouteUtils.pop(context);
           }
       ),
       body: SafeArea(
@@ -36,7 +41,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              _themeModelGroupCart(colorScheme: colorScheme),
+              _themeModelGroupCart(colorScheme: colorScheme,appText: appText),
             ],
           ),
         ),
@@ -119,6 +124,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
   }
   Widget _themeModelGroupCart({
     required ColorScheme colorScheme,
+    required AppLocalizations appText
   }){
     return Consumer<AppVM>(builder: (context,vm,child){
       return Container(
@@ -126,9 +132,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
         width: double.infinity,
         color: colorScheme.surface,
         child: RadioGroup<ThemeMode>(
-          groupValue: vm.themeModelSelectedValue,
-          onChanged: (ThemeMode? value) async {
-            await vm.changedThemeModelSelectedValue(value);
+          groupValue: vm.tempSelectedValue,
+          onChanged: (ThemeMode? value) {
+            vm.changedTempSelectedValue(value);
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -136,17 +142,17 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
               _themeModelCardItem(
                 colorScheme: colorScheme,
                 value: ThemeMode.system,
-                title: "跟随系统"
+                title: appText.profile_screen_follow_system
               ),
               _themeModelCardItem(
                   colorScheme: colorScheme,
                   value: ThemeMode.light,
-                  title: "浅色模式"
+                  title: appText.profile_screen_light_mode
               ),
               _themeModelCardItem(
                   colorScheme: colorScheme,
                   value: ThemeMode.dark,
-                  title: "深色模式"
+                  title: appText.profile_screen_dark_mode
               )
             ],
           ),

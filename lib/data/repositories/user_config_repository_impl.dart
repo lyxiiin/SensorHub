@@ -2,17 +2,22 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/data/services/shared_preferences_service.dart';
-import 'package:sensor_hub/domain/user_config_repository.dart';
 
-class UserConfigRepositoryImpl implements UserConfigRepository{
-  static final UserConfigRepositoryImpl _instance = UserConfigRepositoryImpl.internal();
-  factory UserConfigRepositoryImpl() => _instance;
-  UserConfigRepositoryImpl.internal();
-
-  @override
+class UserConfigRepository{
+  static final UserConfigRepository _instance = UserConfigRepository.internal();
+  factory UserConfigRepository() => _instance;
+  UserConfigRepository.internal();
   late ThemeMode theme;
 
-  @override
+  late String language;
+  static const List<List<String>> languageList = [
+    ["跟随系统", "auto"],
+    ["简体中文", "zh_CN"],
+    ["繁体中文", "zh_TW"],
+    ["English", "en"],
+    ["日本語", "ja"],
+  ];
+
   bool checkFirstRun() {
     if(SPUtil().getBool("is_first_run",defaultValue: true) == true){
       return true;
@@ -20,13 +25,12 @@ class UserConfigRepositoryImpl implements UserConfigRepository{
     return false;
   }
 
-  @override
   Future<void> initializeConfig() async {
     await SPUtil().setString("theme", "light");
+    await SPUtil().setString("language", languageList[1][1]);
     await SPUtil().setBool('is_first_run', false);
   }
 
-  @override
   void readUserConfig() {
     try{
       final themeStr = SPUtil().getString("theme",defaultValue: "system");
@@ -41,12 +45,13 @@ class UserConfigRepositoryImpl implements UserConfigRepository{
           theme = ThemeMode.system;
           break;
       }
+      language = SPUtil().getString("language",defaultValue: languageList[1][1]);
+      log("当前语言： $language");
     } catch (e){
       log("读取错误$e");
     }
   }
 
-  @override
   Future<void> saveTheme({required ThemeMode newTheme}) async {
     switch(newTheme){
       case ThemeMode.light:
@@ -60,4 +65,10 @@ class UserConfigRepositoryImpl implements UserConfigRepository{
         break;
     }
   }
+
+  Future<void> saveLanguage({required String newLanguage}) async {
+    await SPUtil().setString("language", newLanguage);
+  }
+
+
 }
