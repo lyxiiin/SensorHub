@@ -12,7 +12,11 @@ AppBar createAppBar({
 }){
   return AppBar(
     centerTitle: true,
-    iconTheme: IconThemeData(color: colorScheme.primary,size: 20.r),
+    backgroundColor: colorScheme.surfaceContainerHigh,
+    iconTheme: IconThemeData(
+      color: colorScheme.primary,
+      size: 20.r,
+    ),
     leading: IconButton(
       icon: Icon(Icons.arrow_back_ios_new_sharp),
       onPressed: onBack,

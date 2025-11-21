@@ -69,5 +69,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get profile_screen_follow_system => '自動';
 
   @override
+  String get common_ui_cancel => 'キャンセル';
+
+  @override
   String get common_ui_finish => '完了';
 }

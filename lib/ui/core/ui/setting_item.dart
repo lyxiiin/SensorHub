@@ -115,8 +115,7 @@ class _SettingItemState extends State<SettingItem>
                     SvgPicture.asset(
                       widget.icon ?? "assets/icons/icon_device.svg",
                       height: 24.h,
-                      colorFilter: ColorFilter.mode(
-                          widget.colorScheme.onSurfaceVariant, BlendMode.srcIn),
+                      colorFilter: ColorFilter.mode(widget.colorScheme.onSurfaceVariant, BlendMode.srcIn),
                     ),
                   SizedBox(width: 8.w),
                   Column(
@@ -137,8 +136,7 @@ class _SettingItemState extends State<SettingItem>
                           widget.subTitle ?? "",
                           style: TextStyle(
                             fontSize: 12.sp,
-                            color: widget.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
+                            color: widget.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                           ),
                         ),
                     ],
@@ -149,8 +147,7 @@ class _SettingItemState extends State<SettingItem>
                       widget.currentValue ?? "",
                       style: TextStyle(
                         fontSize: 18.sp,
-                        color: widget.colorScheme.onSurfaceVariant
-                            .withValues(alpha: 0.5),
+                        color: widget.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                     ),
                   if (widget.showSwitchButton)

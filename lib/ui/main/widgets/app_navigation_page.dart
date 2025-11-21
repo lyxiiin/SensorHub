@@ -53,7 +53,7 @@ class _AppNavigationPageState extends State<AppNavigationPage >{
       backgroundColor: colorScheme.surface,
       body: IndexedStack(index: _currentIndex,children: tabItems,),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colorScheme.surfaceContainerHigh,
         iconSize: 24.r,
         selectedFontSize: 14.sp,
         unselectedFontSize: 12.sp,

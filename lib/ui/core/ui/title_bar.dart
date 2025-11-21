@@ -5,11 +5,13 @@ class TitleBar extends StatelessWidget{
   final String? title;
   final double? titleSize;
   final ColorScheme colorScheme;
+  final double paddingTop;
   const TitleBar({
     super.key,
     this.title,
     this.titleSize,
     required this.colorScheme,
+    required this.paddingTop,
   });
 
 
@@ -17,9 +19,9 @@ class TitleBar extends StatelessWidget{
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 52.h,
-      color: colorScheme.surface, // 与父容器一致
-      padding: EdgeInsets.only(left: 12.w,right: 12.w),
+      height: paddingTop + 52.h,
+      color: colorScheme.surfaceContainerHighest,
+      padding: EdgeInsets.only(top: paddingTop,left: 12.w,right: 12.w),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

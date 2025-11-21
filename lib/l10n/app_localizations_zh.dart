@@ -69,6 +69,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profile_screen_follow_system => '跟随系统';
 
   @override
+  String get common_ui_cancel => '取消';
+
+  @override
   String get common_ui_finish => '完成';
 }
 
@@ -135,6 +138,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get profile_screen_follow_system => '跟隨系統';
+
+  @override
+  String get common_ui_cancel => '取消';
 
   @override
   String get common_ui_finish => '完成';

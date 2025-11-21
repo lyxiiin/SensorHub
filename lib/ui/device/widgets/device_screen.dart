@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
+import 'package:sensor_hub/ui/device/widgets/device_group_sheet_content.dart';
 import 'package:sensor_hub/ui/device/widgets/device_info_card.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -35,7 +36,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               width: double.infinity,
               padding: EdgeInsets.only(left: 12.w,right: 12.w,bottom: 12.h),
               decoration: BoxDecoration(
-                color: colorScheme.surface, // 主区域背景
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(16.r),
                   bottomRight: Radius.circular(16.r),
@@ -45,7 +46,30 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 spacing: 8.h,
                 children: [
                   _titleBar(colorScheme),
-                  _selectMenu(colorScheme),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(double.infinity, 48.h),
+                    ),
+                    onPressed: (){
+                      deviceGroupSheet(context: context);
+                    },
+                    child: Row(
+                      children: [
+                        Text(
+                          "全部设备",
+                          style: TextStyle(
+                            fontSize: 16.sp
+                          ),
+                        ),
+                        Spacer(),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 32.r,
+                          // color: colorScheme.onSurface,
+                        ),
+                      ],
+                    ),
+                  ),
                   deviceStateCards(colorScheme,appText)
                 ],
               ),
@@ -60,7 +84,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return Container(
       width: double.infinity,
       height: 52.h,
-      color: colorScheme.surface, // 与父容器一致
+      color: colorScheme.surface,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -83,59 +107,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
         ],
       ),
     );
-  }
-
-  Widget _selectMenu(ColorScheme colorScheme) {
-    return Consumer<DeviceVM>(builder: (context, vm, child) {
-      return Container(
-        padding: EdgeInsets.only(left: 16.w, right: 16.w),
-        width: double.infinity,
-        height: 48.h,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(8.r),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.1),
-              spreadRadius: 0.5,
-              blurRadius: 3,
-            ),
-          ],
-          border: Border.all(
-            width: 0.5.r,
-            color: colorScheme.outline.withValues(alpha: 0.5),
-          ),
-        ),
-        child: DropdownButton<String>(
-          isExpanded: true,
-          underline: const SizedBox(), // 移除默认下划线
-          icon: Icon(
-            Icons.arrow_drop_down,
-            color: colorScheme.onSurface, // 图标颜色适配主题
-          ),
-          iconSize: 32.r,
-          value: vm.selectedDevice,
-          items: vm.devices.map<DropdownMenuItem<String>>((String device) {
-            return DropdownMenuItem<String>(
-              value: device,
-              child: Text(
-                device,
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  color: colorScheme.onSurface, // 文字颜色
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            if (newValue != null && newValue != vm.selectedDevice) {
-
-            }
-          },
-        ),
-      );
-    });
   }
   Widget deviceStateCards(ColorScheme colorScheme, AppLocalizations appText){
     return Container(
@@ -182,7 +153,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       width: 84.w,
       height: 120.h,
       decoration: BoxDecoration(
-        color: colorScheme.surfaceBright,
+        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8.r),
         boxShadow: [
           BoxShadow(
@@ -291,6 +262,28 @@ class _DeviceScreenState extends State<DeviceScreen> {
         );
       }
     });
+  }
+
+  Future<dynamic> deviceGroupSheet({required BuildContext context}){
+    return showModalBottomSheet(
+      constraints: BoxConstraints(
+        maxHeight: 0.8.sh
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      scrollControlDisabledMaxHeightRatio: 0.8,
+      showDragHandle: true,
+      context: context,
+      builder: (context){
+        return Consumer<DeviceVM>(builder: (context,vm,child){
+          return SizedBox(
+            height: 0.8.sh,
+            child: DeviceGroupSheetContent(deviceGroups: vm.userDeviceGroups, onclick: () {  },),
+          );
+        });
+      }
+    );
   }
 
 }

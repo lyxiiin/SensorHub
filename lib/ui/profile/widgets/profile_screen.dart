@@ -26,25 +26,25 @@ class _ProfileScreenState extends State<ProfileScreen>{
     final colorScheme = theme.colorScheme;
     final appText = AppLocalizations.of(context);
     return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
         child: Column(
           children: [
             TitleBar(
               title: appText.profile_screen_personal_info,
-              colorScheme: colorScheme
+              colorScheme: colorScheme,
+              paddingTop: MediaQuery.of(context).padding.top,
             ),
             SizedBox(height: 16.h,),
             Padding(
-              padding: EdgeInsets.only(left: 12.w,right: 12.w),
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
               child: Container(
-                width: double.infinity,
-                height: 212.h,
                 padding: EdgeInsets.only(left:12.w,right:12.w,),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
+                  color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     SettingItem(
                       icon: "assets/icons/icon_device.svg",
@@ -58,14 +58,14 @@ class _ProfileScreenState extends State<ProfileScreen>{
                     ),
                     Consumer<AppVM>(builder: (context,vm,child){
                       return settingItemState(
-                          icon: 'assets/icons/icon_device.svg',
-                          colorScheme: colorScheme,
-                          title: appText.profile_screen_language,
-                          showCurrentValue: true,
-                          currentValue: vm.languageName,
-                          onClick: (){
-                            RouteUtils.pushForNamed(context, RoutePath.languageSelection);
-                          },
+                        icon: 'assets/icons/icon_device.svg',
+                        colorScheme: colorScheme,
+                        title: appText.profile_screen_language,
+                        showCurrentValue: true,
+                        currentValue: vm.languageName,
+                        onClick: (){
+                          RouteUtils.pushForNamed(context, RoutePath.languageSelection);
+                        },
                       );
                     }),
                     Consumer<AppVM>(builder: (context,vm,child){
@@ -88,7 +88,8 @@ class _ProfileScreenState extends State<ProfileScreen>{
               ),
             )
           ],
-        )
+        ),
+      ),
     );
   }
   Widget settingItemState({

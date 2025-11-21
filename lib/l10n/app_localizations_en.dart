@@ -69,5 +69,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_screen_follow_system => 'System';
 
   @override
+  String get common_ui_cancel => 'Cancel';
+
+  @override
   String get common_ui_finish => 'Finish';
 }

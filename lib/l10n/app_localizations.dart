@@ -221,6 +221,12 @@ abstract class AppLocalizations {
   /// **'跟随系统'**
   String get profile_screen_follow_system;
 
+  /// No description provided for @common_ui_cancel.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get common_ui_cancel;
+
   /// No description provided for @common_ui_finish.
   ///
   /// In zh, this message translates to:

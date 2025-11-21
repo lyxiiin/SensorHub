@@ -22,6 +22,8 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
     final colorScheme = theme.colorScheme;
     final appText = AppLocalizations.of(context);
     return Scaffold(
+      extendBody: true,
+      backgroundColor: colorScheme.surface,
       appBar: createAppBar(
           title: appText.profile_screen_appearance,
           appText: appText,
@@ -36,16 +38,16 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
           }
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(left: 12.w,right: 12.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _themeModelGroupCart(colorScheme: colorScheme,appText: appText),
-            ],
+        child: Container(
+            color: colorScheme.surfaceContainer,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _themeModelGroupCart(colorScheme: colorScheme,appText: appText),
+              ],
+            ),
           ),
         ),
-      ),
     );
   }
   Widget _themeModelCardItem({

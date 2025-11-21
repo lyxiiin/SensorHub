@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -25,6 +26,8 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>{
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      extendBody: true,
+      backgroundColor: colorScheme.surface,
       appBar: createAppBar(
           title: appText.language,
           appText: appText,
@@ -43,7 +46,9 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>{
           itemCount: vm.languageList.length,
           itemBuilder: (context,index){
             return ListTile(
-              title: vm.languageList[index][1] == "auto" ? Text(appText.profile_screen_follow_system) : Text(vm.languageList[index][0]),
+              title: vm.languageList[index][1] == "auto" ?
+                Text(appText.profile_screen_follow_system,style: TextStyle(fontSize: 18.sp),) :
+                Text(vm.languageList[index][0],style: TextStyle(fontSize: 18.sp),),
               trailing: vm.languageName == vm.languageList[index][0] ? Icon(Icons.check,color: colorScheme.primary,) : null,
               shape: index+1 != vm.languageList.length ? Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1.0)) : null,
               tileColor: colorScheme.surface,
