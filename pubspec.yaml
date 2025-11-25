@@ -33,9 +33,11 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
-  # 申请权限
-#  flutter_local_notifications: ^19.5.0
-#  permission_handler: ^12.0.1
+  # mqtt服务
+  mqtt_client: ^10.11.1
+  # 数据库服务
+  sqflite: ^2.4.2
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
