@@ -41,24 +41,26 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>{
             RouteUtils.pop(context);
           }
       ),
-      body: Consumer<AppVM>(builder: (context,vm,child){
-        return ListView.builder(
-          itemCount: vm.languageList.length,
-          itemBuilder: (context,index){
-            return ListTile(
-              title: vm.languageList[index][1] == "auto" ?
+      body: SafeArea(
+        child: Consumer<AppVM>(builder: (context,vm,child){
+          return ListView.builder(
+            itemCount: vm.languageList.length,
+            itemBuilder: (context,index){
+              return ListTile(
+                title: vm.languageList[index][1] == "auto" ?
                 Text(appText.profile_screen_follow_system,style: TextStyle(fontSize: 18.sp),) :
                 Text(vm.languageList[index][0],style: TextStyle(fontSize: 18.sp),),
-              trailing: vm.languageName == vm.languageList[index][0] ? Icon(Icons.check,color: colorScheme.primary,) : null,
-              shape: index+1 != vm.languageList.length ? Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1.0)) : null,
-              tileColor: colorScheme.surface,
-              onTap: (){
-                vm.changedTempLanguage(index);
-              },
-            );
-          },
-        );
-      }),
+                trailing: vm.languageName == vm.languageList[index][0] ? Icon(Icons.check,color: colorScheme.primary,) : null,
+                shape: index+1 != vm.languageList.length ? Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1.0)) : null,
+                tileColor: colorScheme.surface,
+                onTap: (){
+                  vm.changedTempLanguage(index);
+                },
+              );
+            },
+          );
+        }),
+      ),
     );
   }
 
