@@ -22,7 +22,7 @@ AppBar createAppBar({
       onPressed: onBack,
     ),
     title: Text(
-      appText.profile_screen_appearance,
+      title,
       style: TextStyle(
         fontSize: 20.sp,
         fontWeight: FontWeight.bold,
@@ -36,7 +36,7 @@ AppBar createAppBar({
           textStyle: TextStyle(fontSize: 18.sp),
         ),
         onPressed: onFinish,
-        child: Text('完成'),
+        child: Text(appText.common_ui_finish),
       )
     ],
   );

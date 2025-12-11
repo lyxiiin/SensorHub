@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:sensor_hub/route/route_utils.dart';
+import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/device/widgets/device_group_sheet_content.dart';
 import 'package:sensor_hub/ui/device/widgets/device_info_card.dart';
@@ -17,9 +19,14 @@ class DeviceScreen extends StatefulWidget {
 }
 
 class _DeviceScreenState extends State<DeviceScreen> {
+  late AppLocalizations appText;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final viewModel = Provider.of<DeviceVM>(context, listen: false);
+      await viewModel.initData();
+    });
   }
 
   @override
@@ -51,7 +58,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       fixedSize: Size(double.infinity, 48.h),
                     ),
                     onPressed: (){
-                      deviceGroupSheet(context: context);
+                      // deviceGroupSheet(context: context);
                     },
                     child: Row(
                       children: [
@@ -74,7 +81,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 ],
               ),
             ),
-            deviceList(colorScheme,appText),
+            Expanded(
+              child: deviceList(colorScheme,appText),
+            ),
           ],
         ),
     );
@@ -102,7 +111,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
           IconButton(
             icon: Icon(Icons.add, color: colorScheme.onSurface),
             iconSize: 28.h,
-            onPressed: () {},
+            onPressed: () {
+              RouteUtils.pushForNamed(context, RoutePath.deviceAdd);
+            },
           ),
         ],
       ),
@@ -111,6 +122,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   Widget deviceStateCards(ColorScheme colorScheme, AppLocalizations appText){
     return Container(
       width: double.infinity,
+      height: 120.h,
       color: colorScheme.surface,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -202,61 +214,70 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
   Widget deviceList(ColorScheme colorScheme,AppLocalizations appText){
     return Consumer<DeviceVM>(builder: (context,vm,child){
-      if(vm.deviceCount == 0){
-        return Expanded(
-            child:SizedBox.expand(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 160.w,
-                    height: 120.h,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          "assets/icons/icon_device.svg",
-                          width: 100.w,
-                        ),
-                        Positioned(
-                          top: 36.h, // 垂直居中（基于容器高度）
-                          left: 96.w, // 右边缘减去按钮半宽
-                          child: IconButton(
-                            iconSize: 48.w,
-                            padding: EdgeInsets.zero, // 移除默认 padding 更精准
-                            color: colorScheme.primary,
-                            icon: Icon(Icons.add_circle_outline),
-                            onPressed: () {
-                              // your logic
-                            },
-                          ),
-                        ),
-                      ],
+      if(vm.serviceCard.isEmpty){
+        return SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 160.w,
+                height: 120.h,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      "assets/icons/icon_device.svg",
+                      width: 100.w,
                     ),
-                  ),
-                  Text(
-                    appText.device_screen_prompt,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize:16.sp,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                    Positioned(
+                      top: 36.h, // 垂直居中（基于容器高度）
+                      left: 96.w, // 右边缘减去按钮半宽
+                      child: IconButton(
+                        iconSize: 48.w,
+                        padding: EdgeInsets.zero, // 移除默认 padding 更精准
+                        color: colorScheme.primary,
+                        icon: Icon(Icons.add_circle_outline),
+                        onPressed: () {
+                          // your logic
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )
+              Text(
+                appText.device_screen_prompt,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize:16.sp,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                ),
+              ),
+            ],
+          ),
         );
       }else{
         return ListView.builder(
-          itemCount: vm.deviceCount,
+          itemCount: vm.serviceCard.length,
           itemBuilder: (context,index){
-            return DeviceInfoCard(
-              colorScheme: colorScheme,
-              dateList: [],
-              onTap: (){
+            final item = vm.serviceCard.entries.elementAt(index);
+            // 添加对null值的检查
+            if (item.value.isEmpty) {
+              return Container(); // 返回空容器而不是崩溃
+            }
+            final lastItemIndex = item.value.length - 1;
+            return Padding(
+              padding: EdgeInsets.only(left: 12.w,right: 12.w,bottom: 12.w),
+              child: DeviceInfoCard(
+                colorScheme: colorScheme,
+                name: item.key,
+                time: lastItemIndex >= 0 ? vm.getMinutesDifference(item.value[lastItemIndex].datetime).toString() : "0",
+                dateList: lastItemIndex >= 0 ? vm.dataToMap(item.value[lastItemIndex]) : {},
+                onTap: (){
 
-              },
+                },
+              ),
             );
           },
         );
@@ -264,26 +285,26 @@ class _DeviceScreenState extends State<DeviceScreen> {
     });
   }
 
-  Future<dynamic> deviceGroupSheet({required BuildContext context}){
-    return showModalBottomSheet(
-      constraints: BoxConstraints(
-        maxHeight: 0.8.sh
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      scrollControlDisabledMaxHeightRatio: 0.8,
-      showDragHandle: true,
-      context: context,
-      builder: (context){
-        return Consumer<DeviceVM>(builder: (context,vm,child){
-          return SizedBox(
-            height: 0.8.sh,
-            child: DeviceGroupSheetContent(deviceGroups: vm.userDeviceGroups, onclick: () {  },),
-          );
-        });
-      }
-    );
-  }
+  // Future<dynamic> deviceGroupSheet({required BuildContext context}){
+  //   return showModalBottomSheet(
+  //     constraints: BoxConstraints(
+  //       maxHeight: 0.8.sh
+  //     ),
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+  //     ),
+  //     scrollControlDisabledMaxHeightRatio: 0.8,
+  //     showDragHandle: true,
+  //     context: context,
+  //     builder: (context){
+  //       return Consumer<DeviceVM>(builder: (context,vm,child){
+  //         return SizedBox(
+  //           height: 0.8.sh,
+  //           child: DeviceGroupSheetContent(deviceGroups: vm.userDeviceGroups, onclick: () {  },),
+  //         );
+  //       });
+  //     }
+  //   );
+  // }
 
 }

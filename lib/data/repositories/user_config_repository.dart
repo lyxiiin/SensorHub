@@ -29,6 +29,7 @@ class UserConfigRepository{
     await SPUtil().setString("theme", "light");
     await SPUtil().setString("language", languageList[1][1]);
     await SPUtil().setBool('is_first_run', false);
+    log("首选项设置：OK");
   }
 
   void readUserConfig() {

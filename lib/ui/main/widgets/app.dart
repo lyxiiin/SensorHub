@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
+import 'package:sensor_hub/data/repositories/mqtt_repository.dart';
+import 'package:sensor_hub/data/services/sqlite_service.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/core/themes/app_theme.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/profile/view_model/profile_vm.dart';
 import '../app_vm.dart';
-import 'package:sensor_hub/data/repositories/user_config_repository_impl.dart';
+import 'package:sensor_hub/data/repositories/user_config_repository.dart';
 
 class MyApp extends StatefulWidget{
   final UserConfigRepository userConfig;

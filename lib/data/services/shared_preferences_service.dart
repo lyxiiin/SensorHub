@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import '../exceptions/shared_preferences_exception.dart';
 
@@ -20,7 +22,7 @@ class SPUtil {
         _initError = null;
       } catch (e) {
         _isInitialized = true;
-        _initError = e is Exception ? e : Exception('Unknown error: $e');
+        _initError = e is Exception ? e : Exception('未知 error: $e');
         throw SharedPreferencesInitException("SharedPreferences 初始化失败: $e");
       }
     }
@@ -28,13 +30,13 @@ class SPUtil {
     if (_initError != null) {
       throw _initError!;
     }
-
     return _instance;
   }
 
   // 静态初始化方法
   static Future<void> init() async {
     await getInstance();
+    log("首选项初始化：OK");
   }
 
   // 状态检查

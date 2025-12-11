@@ -2,11 +2,11 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'data/repositories/user_config_repository_impl.dart';
+import 'data/repositories/user_config_repository.dart';
 import 'ui/main/widgets/app.dart';
 import 'data/services/shared_preferences_service.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await SPUtil.init();

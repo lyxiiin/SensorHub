@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sensor_hub/ui/device/widgets/device_add_page.dart';
+import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
+import 'package:sensor_hub/ui/profile/widgets/units_conversion_page.dart';
 
 import '../ui/main/widgets/app_navigation_page.dart';
 import '../ui/profile/widgets/language_selection_page.dart';
@@ -13,6 +16,12 @@ class Routes{
         return pageRoute(ThemeSelectionPage());
       case RoutePath.languageSelection:
         return pageRoute(LanguageSelectionPage());
+      case RoutePath.unitsConversion:
+        return pageRoute(UnitsConversionPage());
+      case RoutePath.deviceAdd:
+        return pageRoute(DeviceAddPage());
+      case RoutePath.deviceRegistrationFrom:
+        return pageRoute(DeviceRegistrationFormPage());
     }
     return pageRoute(
         Scaffold(
@@ -48,4 +57,12 @@ class RoutePath{
 
   // 语言设置页
   static const String languageSelection = "LanguageSelectionPage";
+
+  // 度数单位设置页
+  static const String unitsConversion = "UnitsConversionPage";
+
+  //
+  static const String deviceAdd = "DeviceAddPage";
+  //
+  static const String deviceRegistrationFrom = "DeviceRegistrationFromPage";
 }

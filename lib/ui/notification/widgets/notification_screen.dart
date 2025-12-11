@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
+import '../../../data/services/mqtt_service.dart';
+
 class NotificationScreen extends StatefulWidget{
   const NotificationScreen({super.key});
 
@@ -11,6 +13,14 @@ class NotificationScreen extends StatefulWidget{
 }
 
 class _NotificationScreenState extends State<NotificationScreen>{
+  late MqttService subscriber;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // subscriber = MqttService();
+    // subscriber.connect();
+  }
   @override
   Widget build(BuildContext context) {
     return SafeArea(

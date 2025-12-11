@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:sensor_hub/data/repositories/user_config_repository_impl.dart';
+import 'package:sensor_hub/data/repositories/user_config_repository.dart';
 
 class AppVM extends ChangeNotifier{
   ThemeMode themeModelSelectedValue = ThemeMode.system;
@@ -14,6 +14,11 @@ class AppVM extends ChangeNotifier{
   late String languageName; //当前语言——文本
 
   late Locale currentLocale;
+
+  // 数据单位
+  late String selectedTemperatureUnit;
+
+
   
   void initApp() {
     UserConfigRepository userConfig = UserConfigRepository();

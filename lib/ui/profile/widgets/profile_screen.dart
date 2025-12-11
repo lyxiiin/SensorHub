@@ -55,6 +55,9 @@ class _ProfileScreenState extends State<ProfileScreen>{
                       icon: "assets/icons/icon_device.svg",
                       colorScheme: colorScheme,
                       title: appText.profile_screen_degree_unit,
+                      onClick: (){
+                        RouteUtils.pushForNamed(context, RoutePath.unitsConversion);
+                      },
                     ),
                     Consumer<AppVM>(builder: (context,vm,child){
                       return settingItemState(
