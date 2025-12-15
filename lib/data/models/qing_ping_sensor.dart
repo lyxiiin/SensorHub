@@ -1,10 +1,10 @@
 class QingPingSensor {
   final int? configId;
-  final String deviceId;
+  final String deviceId;        //产品ID
   final String serialNumber;
   final int collectionInterval;
   final int uploadInterval;
-  final String firmwareVersion;
+  final String firmwareVersion; //硬件版本
   final String hardwareVersion;
   final String commModuleVersion;
   final String mcuVersion;

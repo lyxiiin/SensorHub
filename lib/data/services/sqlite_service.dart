@@ -54,29 +54,13 @@ class SqliteService {
         broker TEXT NOT NULL,
         port INTEGER NOT NULL,
         clientId TEXT NOT NULL,
-        topic TEXT NOT NULL,
+        upTopic TEXT NOT NULL,
+        downTopic TEXT NOT NULL,
         username TEXT NOT NULL,
         password TEXT NOT NULL
       );
     ''');
   }
-  // 青萍二氧化碳和温湿度监测仪 Wi-Fi 版
-  Future<void> createDynamicTable(Database db, String tableName,) async {
-    final buffer = StringBuffer('''
-      CREATE TABLE $tableName(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        config_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        datetime INTEGER NOT NULL,
-        temp INTEGER NOT NULL,
-        humidity INTEGER NOT NULL,
-        co2 INTEGER NOT NULL
-      );
-    ''');
-    await db.execute(buffer.toString());
-  }
-
-
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // 示例：如果未来要加新表或字段，可在此处理

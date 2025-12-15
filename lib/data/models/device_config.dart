@@ -4,7 +4,8 @@ class DeviceConfig {
   final String broker;
   final int port;
   final String clientId;
-  final String topic;
+  final String upTopic;
+  final String downTopic;
   final String username;
   final String password;
 
@@ -13,7 +14,8 @@ class DeviceConfig {
     required this.broker,
     required this.port,
     required this.clientId,
-    required this.topic,
+    required this.upTopic,
+    required this.downTopic,
     required this.username,
     required this.password,
     required this.deviceName
@@ -25,7 +27,8 @@ class DeviceConfig {
       broker: map['broker'],
       port: map['port'],
       clientId: map['clientId'],
-      topic: map['topic'],
+      upTopic: map['upTopic'],
+      downTopic: map['downTopic'],
       username: map['username'],
       password: map['password'],
       deviceName: map['deviceName'],
@@ -39,7 +42,8 @@ class DeviceConfig {
       'broker': broker,
       'port': port,
       'clientId': clientId,
-      'topic': topic,
+      'upTopic': upTopic,
+      'downTopic': downTopic,
       'username': username,
       'password': password,
       'deviceName':deviceName

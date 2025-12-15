@@ -1,37 +1,39 @@
+import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_co2.dart';
 import 'package:sqflite/sqflite.dart';
-import '../models/sensor_reading.dart';
 import '../services/sqlite_service.dart';
 
-class SensorReadingDao {
+class SensorDataCo2Dao {
+  static final SensorDataCo2Dao _instance = SensorDataCo2Dao._internal();
+  factory SensorDataCo2Dao() => _instance;
+  SensorDataCo2Dao._internal();
+
   Future<Database> get db async => SqliteService().database;
 
   Future<void> createTable(String tableName) async {
     final db = await this.db;
     await db.execute('''
       CREATE TABLE IF NOT EXISTS $tableName(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
         config_id TEXT NOT NULL,
-        name TEXT NOT NULL,
         datetime INTEGER NOT NULL,
-        temp INTEGER NOT NULL,
+        temperature INTEGER NOT NULL,
         humidity INTEGER NOT NULL,
         co2 INTEGER NOT NULL
       )
     ''');
   }
 
-  Future<int> insert(String tableName, SensorReading reading) async {
+  Future<int> insert(String tableName, SensorDataCo2 data) async {
     final db = await this.db;
-    return await db.insert(tableName, reading.toMap());
+    return await db.insert(tableName, data.toMap());
   }
 
-  Future<List<SensorReading>> queryAll(String tableName) async {
+  Future<List<SensorDataCo2>> queryAll(String tableName) async {
     final db = await this.db;
     final List<Map<String, dynamic>> maps = await db.query(tableName);
-    return maps.map((e) => SensorReading.fromMap(e)).toList();
+    return maps.map((e) => SensorDataCo2.fromMap(e)).toList();
   }
 
-  Future<List<SensorReading>> queryByTimeRange(
+  Future<List<SensorDataCo2>> queryByTimeRange(
       String tableName,
       int startTime,
       int endTime,
@@ -42,6 +44,6 @@ class SensorReadingDao {
       where: 'datetime BETWEEN ? AND ?',
       whereArgs: [startTime, endTime],
     );
-    return maps.map((e) => SensorReading.fromMap(e)).toList();
+    return maps.map((e) => SensorDataCo2.fromMap(e)).toList();
   }
 }

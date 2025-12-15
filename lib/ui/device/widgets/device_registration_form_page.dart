@@ -26,7 +26,8 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
   final _brokerController = TextEditingController();
   final _portController = TextEditingController();
   final _macController = TextEditingController();
-  final _topicController = TextEditingController();
+  final _upTopicController = TextEditingController();
+  final _downTopicController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   @override
@@ -35,7 +36,8 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
     _brokerController.dispose();
     _portController.dispose();
     _macController.dispose();
-    _topicController.dispose();
+    _upTopicController.dispose();
+    _downTopicController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -167,10 +169,25 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   ),
 
                   const SizedBox(height: 16),
-                  // 主题输入框
+                  // 上传主题输入框
                   _buildTextField(
-                    controller: _topicController,
-                    label: "主题(Topic)",
+                    controller: _upTopicController,
+                    label: "上行主题(Topic)",
+                    hint: "请输入MQTT主题",
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "主题不能为空";
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.text,
+                  ),
+
+                  const SizedBox(height: 16),
+                  // 下行主题输入框
+                  _buildTextField(
+                    controller: _downTopicController,
+                    label: "下行主题(Topic)",
                     hint: "请输入MQTT主题",
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -303,7 +320,8 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       broker: _brokerController.text.trim(),
       port: int.parse(_portController.text.trim()),
       mac: _macController.text.trim(),
-      topic: _topicController.text.trim(),
+      upTopic: _upTopicController.text.trim(),
+      downTopic: _downTopicController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
     );

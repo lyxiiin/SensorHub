@@ -5,12 +5,12 @@ import 'package:flutter_svg/svg.dart';
 import '../../../l10n/app_localizations.dart';
 
 final Map<String,String> labelMap = {
-  'temp': "温度",
+  'temperature': "温度",
   'co2': "二氧化碳",
   'humidity': "湿度"
 };
 final Map<String,String> labelUnitMap = {
-  'temp': "℃",
+  'temperature': "℃",
   'co2': "ppm",
   'humidity': "%"
 };
@@ -20,7 +20,7 @@ class DeviceInfoCard extends StatelessWidget{
   final String? icon;
   final String? name;
   final String? time;
-  final Map<String,String> dateList;
+  final Map<String,dynamic> dateList;
   final GestureTapCallback? onTap;
   const DeviceInfoCard({
     super.key,
@@ -90,58 +90,68 @@ class DeviceInfoCard extends StatelessWidget{
             Wrap(
               spacing: 8.w,        // 水平间距
               runSpacing: 8.h,     // 垂直间距
-              children: dateList.entries.map((entry) {
-                return SizedBox(
-                  width: (MediaQuery.of(context).size.width - 24.w - 16.w - 24.w) / 2, // 粗略估算每行两个
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-                      borderRadius: BorderRadius.circular(6.r),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8.r,
-                            height: 8.r,
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
+              children: dateList.entries
+                  .where((entry) => (entry.value != null))
+                  .map((entry) {
+                    return SizedBox(
+                      width: (MediaQuery.of(context).size.width - 24.w - 16.w - 24.w) / 2, // 粗略估算每行两个
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8.r,
+                                height: 8.r,
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                  labelMap[entry.key] ?? "999",
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              Spacer(),
+                              Text(
+                                  "${restoreOriginalValue(entry.key,entry.value)} ${labelUnitMap[entry.key] ?? "999"}",
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
                           ),
-                          SizedBox(width: 6.w),
-                          Text(
-                              labelMap[entry.key]!,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          Spacer(),
-                          Text(
-                              "${entry.value} ${labelUnitMap[entry.key]!}",
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ],
         ),
       ),
     );
   }
+
+  String restoreOriginalValue(String key, dynamic value){
+    if(value is int &&(key == "temperature" || key == "humidity")){
+      return (value / 10.0).toString();
+    }
+    return value.toString();
+  }
+
 
 }

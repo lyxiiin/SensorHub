@@ -1,16 +1,28 @@
 import 'dart:developer';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
 import 'package:sensor_hub/route/routes.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../route/route_utils.dart';
 import '../../core/ui/custom_app_bar.dart';
-import '../view_model/device_vm.dart';
 
 
+
+const Map<String,List<String>> deviceTypeList = {
+  "青萍": [
+    "青萍二氧化碳和温湿度检测仪",
+    "青萍商用温湿度（气压）计（S）",
+    "青萍商用温湿度计 E",
+    "青萍商用多功能检测仪",
+    "青萍墙壁插座式温湿度计",
+    "青萍墙壁开关式温湿度计",
+    "青萍室内环境检测仪",
+    "青萍空气检测仪",
+    "青萍空气检测仪 2",
+    "青萍空气检测仪 Lite",
+  ],
+};
+final keysList = deviceTypeList.keys.toList(growable: false);
 class DeviceAddPage extends StatelessWidget{
   const DeviceAddPage({super.key});
 
@@ -19,10 +31,6 @@ class DeviceAddPage extends StatelessWidget{
     final appText = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    const Map<String,List<String>> deviceTypeList = {
-      "青萍": ["青萍二氧化碳和温湿度检测仪",],
-    };
-    final keysList = deviceTypeList.keys.toList(growable: false);
     return Scaffold(
       extendBody: true,
       backgroundColor: colorScheme.surface,

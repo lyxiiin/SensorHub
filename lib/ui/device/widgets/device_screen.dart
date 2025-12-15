@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
-import 'package:sensor_hub/ui/device/widgets/device_group_sheet_content.dart';
 import 'package:sensor_hub/ui/device/widgets/device_info_card.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -239,7 +238,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         color: colorScheme.primary,
                         icon: Icon(Icons.add_circle_outline),
                         onPressed: () {
-                          // your logic
+                          RouteUtils.pushForNamed(context, RoutePath.deviceAdd);
                         },
                       ),
                     ),
@@ -267,13 +266,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
               return Container(); // 返回空容器而不是崩溃
             }
             final lastItemIndex = item.value.length - 1;
+            final map = item.value[lastItemIndex].toMap();
+            map.remove('config_id');
+            map.remove('datetime');
             return Padding(
               padding: EdgeInsets.only(left: 12.w,right: 12.w,bottom: 12.w),
               child: DeviceInfoCard(
                 colorScheme: colorScheme,
                 name: item.key,
                 time: lastItemIndex >= 0 ? vm.getMinutesDifference(item.value[lastItemIndex].datetime).toString() : "0",
-                dateList: lastItemIndex >= 0 ? vm.dataToMap(item.value[lastItemIndex]) : {},
+                dateList: map,
                 onTap: (){
 
                 },

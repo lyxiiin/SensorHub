@@ -1,10 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
+import 'package:sensor_hub/data/dao/sensor_data_co2_dao.dart';
 import 'package:sensor_hub/data/services/sqlite_service.dart';
-import '../decoders/qingping/qingping_co2_temperature_humidity_decoder.dart';
 import '../models/device_config.dart';
-import '../models/sensor_reading.dart';
 
 class MqttRepository {
   static final MqttRepository _instance = MqttRepository.internal();
@@ -31,7 +28,8 @@ class MqttRepository {
     await _configDao!.insert(config);
     final DeviceConfig? newConfig = await _configDao!.getByClientId(config.clientId);
     if(newConfig != null){
-      await _sqliteService!.createDynamicTable(await _sqliteService!.database, "${newConfig.clientId}_${newConfig.configId}");
+      final sensorDao = SensorDataCo2Dao();
+      await sensorDao.createTable("${newConfig.clientId}_${newConfig.configId}");
       return newConfig.configId!;
     }
     return -1;
@@ -43,30 +41,5 @@ class MqttRepository {
     return devices;
   }
 
-  Future<List<SensorReading>> decodeDate(DeviceConfig deviceConfig, Uint8List payload) async {
-    final decode = QingPingCo2TemperatureHumidityDecoder();
-    List<SensorReading> results = [];
-    if (payload.length < 3) {
-      return results;
-    }
-    final length = decode.combineLittleEndianAndToNum([payload[1], payload[2]]);
-
-    switch (payload[0]) {
-      case 0x41: // 实时数据报告
-        // results.addAll(_decodeRealTimeReport(payload.sublist(3, 3 + length), deviceName, configId));
-        break;
-      case 0x42: // 统计数据报告
-      // TODO: 实现统计数据解码
-        break;
-      case 0x43: // 历史数据报告
-      // TODO: 实现历史数据解码
-        break;
-      case 0x44: // 事件数据报告
-      // TODO: 实现事件数据解码
-        break;
-    }
-
-    return results;
-  }
 
 }
