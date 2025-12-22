@@ -7,12 +7,28 @@ import '../../../l10n/app_localizations.dart';
 final Map<String,String> labelMap = {
   'temperature': "温度",
   'co2': "二氧化碳",
-  'humidity': "湿度"
+  'humidity': "湿度",
+  'atmosPressure':"大气压强",
+  'pm25': "细颗粒物",
+  'pm10': "可吸入颗粒物",
+  'voc': "挥发性有机化合物",
+  'noise': "噪音",
+  'lux': "照度",
+  "externalCo2": "二氧化碳(外接)",
+  "externalTemperature": "温度(外接)",
 };
 final Map<String,String> labelUnitMap = {
   'temperature': "℃",
   'co2': "ppm",
-  'humidity': "%"
+  'humidity': "%",
+  'atmosPressure':"kPa",
+  'pm25': "µg/m³",
+  'pm10': "µg/m³",
+  'voc': "mg/m³",
+  'noise': "dB",
+  'lux': "Lux",
+  "externalCo2": "%",
+  "externalTemperature": "℃",
 };
 
 class DeviceInfoCard extends StatelessWidget{
