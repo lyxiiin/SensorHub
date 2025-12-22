@@ -14,6 +14,7 @@ class MqttService {
   bool _autoReconnect = true;
   int _reconnectDelay = 5000; // 5秒重连
   Timer? _reconnectTimer;
+  StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _streamSubscription;
 
   StreamController<bool>? _connectionStatusController;
   Stream<bool> get connectionStatusStream =>
@@ -97,7 +98,10 @@ class MqttService {
   }
 
   void _listenToMessages() {
-    _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
+    // 取消现有的监听器（如果有的话）
+    _streamSubscription?.cancel();
+    
+    _streamSubscription = _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
       final message = messages[0];
       final topic = message.topic;
       final publishMsg = message.payload as MqttPublishMessage;
@@ -161,6 +165,9 @@ class MqttService {
     _connectionStatusController = null;
     _topicCallbacks.clear();
     _subscribedTopics.clear();
+    // 取消消息监听器
+    _streamSubscription?.cancel();
+    _streamSubscription = null;
     log('MQTT 已手动断开');
   }
 

@@ -1,11 +1,11 @@
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_co2.dart';
+import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_basic.dart';
+import 'package:sensor_hub/data/services/sqlite_service.dart';
 import 'package:sqflite/sqflite.dart';
-import '../services/sqlite_service.dart';
 
-class SensorDataCo2Dao {
-  static final SensorDataCo2Dao _instance = SensorDataCo2Dao._internal();
-  factory SensorDataCo2Dao() => _instance;
-  SensorDataCo2Dao._internal();
+class SensorDataBasicDao {
+  static final SensorDataBasicDao _instance = SensorDataBasicDao._internal();
+  factory SensorDataBasicDao() => _instance;
+  SensorDataBasicDao._internal();
 
   Future<Database> get db async => SqliteService().database;
 
@@ -17,23 +17,22 @@ class SensorDataCo2Dao {
         datetime INTEGER NOT NULL,
         temperature INTEGER NOT NULL,
         humidity INTEGER NOT NULL,
-        co2 INTEGER NOT NULL
       );
     ''');
   }
 
-  Future<int> insert(String tableName, SensorDataCo2 data) async {
+  Future<int> insert(String tableName, SensorDataBasic data) async {
     final db = await this.db;
     return await db.insert(tableName, data.toMap());
   }
 
-  Future<List<SensorDataCo2>> queryAll(String tableName) async {
+  Future<List<SensorDataBasic>> queryAll(String tableName) async {
     final db = await this.db;
     final List<Map<String, dynamic>> maps = await db.query(tableName);
-    return maps.map((e) => SensorDataCo2.fromMap(e)).toList();
+    return maps.map((e) => SensorDataBasic.fromMap(e)).toList();
   }
 
-  Future<List<SensorDataCo2>> queryByTimeRange(
+  Future<List<SensorDataBasic>> queryByTimeRange(
       String tableName,
       int startTime,
       int endTime,
@@ -44,6 +43,6 @@ class SensorDataCo2Dao {
       where: 'datetime BETWEEN ? AND ?',
       whereArgs: [startTime, endTime],
     );
-    return maps.map((e) => SensorDataCo2.fromMap(e)).toList();
+    return maps.map((e) => SensorDataBasic.fromMap(e)).toList();
   }
 }

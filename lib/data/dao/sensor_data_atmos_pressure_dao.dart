@@ -1,11 +1,11 @@
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_co2.dart';
 import 'package:sqflite/sqflite.dart';
+import '../models/sensor_data_subclasses/sensor_data_atmos_pressure.dart';
 import '../services/sqlite_service.dart';
 
-class SensorDataCo2Dao {
-  static final SensorDataCo2Dao _instance = SensorDataCo2Dao._internal();
-  factory SensorDataCo2Dao() => _instance;
-  SensorDataCo2Dao._internal();
+class SensorDataAtmosPressureDao {
+  static final SensorDataAtmosPressureDao _instance = SensorDataAtmosPressureDao._internal();
+  factory SensorDataAtmosPressureDao() => _instance;
+  SensorDataAtmosPressureDao._internal();
 
   Future<Database> get db async => SqliteService().database;
 
@@ -17,23 +17,23 @@ class SensorDataCo2Dao {
         datetime INTEGER NOT NULL,
         temperature INTEGER NOT NULL,
         humidity INTEGER NOT NULL,
-        co2 INTEGER NOT NULL
+        atmosPressure INTEGER NOT NULL
       );
     ''');
   }
 
-  Future<int> insert(String tableName, SensorDataCo2 data) async {
+  Future<int> insert(String tableName, SensorDataAtmosPressure data) async {
     final db = await this.db;
     return await db.insert(tableName, data.toMap());
   }
 
-  Future<List<SensorDataCo2>> queryAll(String tableName) async {
+  Future<List<SensorDataAtmosPressure>> queryAll(String tableName) async {
     final db = await this.db;
     final List<Map<String, dynamic>> maps = await db.query(tableName);
-    return maps.map((e) => SensorDataCo2.fromMap(e)).toList();
+    return maps.map((e) => SensorDataAtmosPressure.fromMap(e)).toList();
   }
 
-  Future<List<SensorDataCo2>> queryByTimeRange(
+  Future<List<SensorDataAtmosPressure>> queryByTimeRange(
       String tableName,
       int startTime,
       int endTime,
@@ -44,6 +44,6 @@ class SensorDataCo2Dao {
       where: 'datetime BETWEEN ? AND ?',
       whereArgs: [startTime, endTime],
     );
-    return maps.map((e) => SensorDataCo2.fromMap(e)).toList();
+    return maps.map((e) => SensorDataAtmosPressure.fromMap(e)).toList();
   }
 }
