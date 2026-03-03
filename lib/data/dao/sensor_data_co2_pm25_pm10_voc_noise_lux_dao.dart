@@ -13,7 +13,7 @@ class SensorDataCo2Pm25Pm10VocNoiseLuxDao {
     final db = await this.db;
     await db.execute('''
       CREATE TABLE IF NOT EXISTS $tableName(
-        config_id TEXT NOT NULL,
+        config_id INTEGER NOT NULL,
         datetime INTEGER NOT NULL,
         temperature INTEGER NOT NULL,
         humidity INTEGER NOT NULL,

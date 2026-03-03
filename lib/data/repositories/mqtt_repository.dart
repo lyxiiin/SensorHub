@@ -1,4 +1,5 @@
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
+import 'package:sensor_hub/data/dao/qingping_sensor_state_dao.dart';
 import 'package:sensor_hub/data/dao/sensor_data_co2_dao.dart';
 import 'package:sensor_hub/data/services/sqlite_service.dart';
 import '../models/device_config.dart';
@@ -30,9 +31,26 @@ class MqttRepository {
     if(newConfig != null){
       final sensorDao = SensorDataCo2Dao();
       await sensorDao.createTable("${newConfig.clientId}_${newConfig.configId}");
+      final sensorStateDao = QingPingSensorStateDao();
+      await sensorStateDao.createTable("qingping_state_${newConfig.configId!}");
       return newConfig.configId!;
     }
     return -1;
+  }
+
+  ///删除设备
+  Future<void> deleteDevice(String clientId, int? configId) async {
+    // 确保服务已初始化
+    if (_sqliteService == null || _configDao == null) {
+      await init();
+    }
+    if(configId != null){
+      await _configDao!.delete(configId);
+      final sensorDao = SensorDataCo2Dao();
+      sensorDao.deleteTable("${clientId}_$configId");
+      final sensorStateDao = QingPingSensorStateDao();
+      await sensorStateDao.deleteTable("qingping_state_$configId");
+    }
   }
 
   //读取所有设备

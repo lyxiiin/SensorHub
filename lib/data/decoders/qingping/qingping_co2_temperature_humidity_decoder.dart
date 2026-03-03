@@ -16,19 +16,57 @@ class QingPingCo2TemperatureHumidityDecoder {
 
   Future<void> decodeDataBy0x44({
     required int length,
-    required Uint8List payload
+    required Uint8List payload,
+    required deviceName
   }) async {
-    String logText = "0x35-- ";
+    String logText = "0x44-- ";
     int index = 5;
     while(index < length - 2){
       final dataType = payload[index];
       final len = bytesToInt([payload[index+1],payload[index+2]]);
       switch(dataType){
+        case 0x69:
+          final sensorType = payload[index + 5];
+          final alertValue = bytesToInt(payload.sublist(index+15,index+19));
+          break;
         case 0x85:
-
+          final datetime = bytesToInt(payload.sublist(index+3,index+7));
+          int value = 0;
+          switch(payload[index+8]){
+            case 0x02:
+              final data = decode0x85BySensorData0x02(payload.sublist(index+8,index+3+len), deviceName, 1, datetime);
+              break;
+          }
           break;
       }
+      index += len+2;
     }
+  }
+
+  void decodeDataBy0x35(int length, Uint8List payload){
+    String logText = "0x35-- ";
+    int index = 5;
+    while(length < length-2){
+      final dataType = payload[index];
+      final len = bytesToInt([payload[index+1], payload[index+2]]);
+      switch(dataType) {
+        case 0x15:  // 时间戳
+          final time = bytesToInt(payload.sublist(index+3,index+3+len));
+          // log("$dataType-时间戳: $time  时间：${DateTime.fromMillisecondsSinceEpoch(time * 1000)}");
+          logText += "  $dataType-时间戳: $time  时间：${DateTime.fromMillisecondsSinceEpoch(time * 1000)}";
+        case 0x1D:  // 断开设备连接
+        // log("断开设备连接?: ${payload[index+3] == 0 ? "还有数据未发送完" : "数据已发送完"}");
+          logText += "  断开设备连接?: ${payload[index+3] == 0 ? "还有数据未发送完" : "数据已发送完"}";
+          break;
+        case 0x38:  // 产品ID
+          final id = bytesToInt(payload.sublist(index+3,index+3+len));
+          // log("$dataType-产品ID: $id");
+          logText += "  产品ID: $id";
+          break;
+      }
+      index += 3+len;
+    }
+    log(logText);
   }
 
   /// 解码 0x85 类型数据（温度）

@@ -5,7 +5,7 @@ import 'package:sensor_hub/data/repositories/user_config_repository.dart';
 
 class AppVM extends ChangeNotifier{
   ThemeMode themeModelSelectedValue = ThemeMode.system;
-  ThemeMode? tempSelectedValue;
+  // 移除tempSelectedValue，因为现在由ProfileVM管理
 
   List<List<String>> languageList = UserConfigRepository.languageList;
 
@@ -23,7 +23,7 @@ class AppVM extends ChangeNotifier{
   void initApp() {
     UserConfigRepository userConfig = UserConfigRepository();
     themeModelSelectedValue = userConfig.theme;
-    tempSelectedValue = themeModelSelectedValue;
+    // 移除tempSelectedValue的初始化，因为现在由ProfileVM管理
 
     languageCode = userConfig.language;
     for(var i=0;i<languageList.length;i++){
@@ -40,45 +40,17 @@ class AppVM extends ChangeNotifier{
     notifyListeners();
   }
 
-  Future<void> changedThemeModelSelectedValue() async {
-    if(tempSelectedValue != null && tempSelectedValue != themeModelSelectedValue){
-      themeModelSelectedValue = tempSelectedValue!;
-      await UserConfigRepository().saveTheme(newTheme: themeModelSelectedValue);
-    }
-    notifyListeners();
-  }
-  void changedTempSelectedValue(ThemeMode? value) {
-    if(value != null){
-      tempSelectedValue = value;
-    }
-    notifyListeners();
-  }
-
+  // 移除changedThemeModelSelectedValue方法，因为现在由ProfileVM管理
+  // 移除changedTempSelectedValue方法，因为现在由ProfileVM管理
 
   void changedTempLanguage(int value){
     languageName = languageList[value][0];
     notifyListeners();
   }
 
-  Future<void> changedLanguage() async {
-    if(languageName != languageCode){
-      for(var i=0;i<languageList.length;i++){
-        if(languageList[i][0] == languageName){
-          languageCode = languageList[i][1];
-          await UserConfigRepository().saveLanguage(newLanguage: languageCode);
-          break;
-        }
-      }
-    }
-    if(languageCode == 'auto'){
-      setAutoLanguage();
-    }else{
-      setCurrentLanguage(languageCode);
-    }
-    log("当前语言: $languageCode");
-    notifyListeners();
-  }
+  // 移除changedLanguage方法，因为现在由ProfileVM管理
 
+  // 保留setAutoLanguage方法，因为ProfileVM会调用它
   void setAutoLanguage(){
     Locale systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
     log("系统语言: ${systemLocale.languageCode}, 国家/地区: ${systemLocale.countryCode}");
@@ -107,6 +79,7 @@ class AppVM extends ChangeNotifier{
     }
   }
   
+  // 保留setCurrentLanguage方法，因为ProfileVM会调用它
   void setCurrentLanguage(String language){
     if(language.length > 2){
       currentLocale =  Locale(language.substring(0,2),language.substring(3));

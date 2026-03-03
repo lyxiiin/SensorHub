@@ -2,29 +2,26 @@ import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:sensor_hub/data/dao/qingping_sensor_state_dao.dart';
+import 'package:sensor_hub/data/dao/sensor_data_atmos_pressure_dao.dart';
 import 'package:sensor_hub/data/dao/sensor_data_co2_dao.dart';
 import 'package:sensor_hub/data/dao/sensor_data_co2_pm25_pm10_voc_noise_lux_dao.dart';
 import 'package:sensor_hub/data/dao/sensor_data_basic_dao.dart';
 import 'package:sensor_hub/data/dao/sensor_data_external_co2_or_temp_dao.dart';
 import 'package:sensor_hub/data/decoders/qingping/qingping_co2_temperature_humidity_decoder.dart';
 import 'package:sensor_hub/data/models/sensor_data.dart';
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_atmos_pressure.dart';
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_co2.dart';
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_co2_pm25_pm10_voc_noise_lux.dart';
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_basic.dart';
-import 'package:sensor_hub/data/models/sensor_data_subclasses/sensor_data_external_co2_or_temp.dart';
 import 'package:sensor_hub/data/repositories/mqtt_repository.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/services/mqtt_service.dart';
-import '../../../data/dao/sensor_data_atmos_pressure_dao.dart';
 
 class DeviceVM with ChangeNotifier{
   late final MqttRepository _mqttRepository;
   late final DeviceConfigDao _configDao;
   int deviceCount = 0;
   final Map<String, MqttService> _services = {};
-  final Map<String, List<SensorData>> serviceCard = {};
+  final Map<String, List<SensorData>> sensorCard = {};
+  bool isLoading = false;
   bool _initEd = false;
   bool _initializing = false;
 
@@ -60,6 +57,12 @@ class DeviceVM with ChangeNotifier{
     }
   }
 
+  Future<void> publishMessage() async {
+    final tt = getService("8.163.13.154", 1883);
+    final temp = [0x43, 0x47, 0x3D, 0x05, 0x00, 0x42, 0x02, 0x00, 0x02, 0x00, 0x12, 0x01];
+    await tt.publish(topic: "qingping/58:2D:34:70:E3:46/down", payload: temp);
+  }
+
   // 使用 host:port 作为唯一 key
   MqttService getService(String host, int port) {
     final key = '$host:$port';
@@ -70,22 +73,32 @@ class DeviceVM with ChangeNotifier{
     final key = '$host:$port';
     final service = _services.remove(key);
     service?.disconnect();
+    notifyListeners();
   }
 
   Future<void> connectAllSavedDevices() async {
     final devicesConfig = await _mqttRepository.getLocalSavedDevices();
     log("初始化：-读取到 ${devicesConfig.length} 个设备");
-    for(var i=0;i<devicesConfig.length;i++){
-      await connectDeviceToMqtt(devicesConfig[i]);
+    
+    // 先遍历所有设备，从数据库加载历史数据，初始化 sensorCard
+    for (final deviceConfig in devicesConfig) {
       final sensorDao = SensorDataCo2Dao();
-      // 修复类型转换错误：确保configId不为空再转换为字符串
-      if (devicesConfig[i].configId != null) {
-        final String tableName = "${devicesConfig[i].clientId}_${devicesConfig[i].configId}";
-        serviceCard[devicesConfig[i].deviceName] = await sensorDao.queryAll(tableName);
+      if (deviceConfig.configId != null) {
+        final String tableName = "${deviceConfig.clientId}_${deviceConfig.configId.toString()}";
+        // 确保configId不为空时才创建表名并查询
+        sensorCard[deviceConfig.deviceName] = await sensorDao.queryAll(tableName);
       } else {
-        log('警告: 设备 ${devicesConfig[i].deviceName} 的 configId 为空');
+        log('警告: 设备 ${deviceConfig.deviceName} 的 configId 为空，无法加载历史数据');
+        // 即使 configId 为空，也初始化一个空列表，避免后续操作出现 null 错误
+        sensorCard[deviceConfig.deviceName] = [];
       }
     }
+
+    // 再遍历所有设备，建立 MQTT 连接
+    for (final deviceConfig in devicesConfig) {
+      await connectDeviceToMqtt(deviceConfig);
+    }
+
     _initEd = true;
   }
 
@@ -98,6 +111,12 @@ class DeviceVM with ChangeNotifier{
       username: deviceConfig.username,
       password: deviceConfig.password,
     );
+
+    // 检查是否已经存在对该主题的订阅，如果有则先取消
+    if (broker1.isSubscribed(deviceConfig.upTopic)) {
+      broker1.unsubscribe(deviceConfig.upTopic);
+    }
+
     broker1.subscribe(deviceConfig.upTopic, (topic, payload) async {
       log("收到消息: $payload");
       final newConfig = await _configDao.getByClientId(deviceConfig.clientId);
@@ -124,11 +143,19 @@ class DeviceVM with ChangeNotifier{
     required String username,
     required String password,
   }) async {
+    isLoading = true;
+    notifyListeners();
+
+    // 避免设备名重复：如果已存在，则追加 (1)
+    String finalName = name;
+    if (sensorCard.containsKey(name)) {
+      finalName = "$name(1)";
+    }
     try{
       final String clientId = "qingping_${mac.replaceAll(':', '_')}";
       final DeviceConfig deviceConfig = DeviceConfig(
         broker: broker,
-        deviceName: name,
+        deviceName: finalName,
         port: port,
         clientId: clientId,
         upTopic: upTopic,
@@ -136,8 +163,14 @@ class DeviceVM with ChangeNotifier{
         username: username,
         password: password,
       );
-      final configId = await _mqttRepository.insertDevice(deviceConfig);
+
+      // 插入设备配置到数据库
+      final newConfig = await _mqttRepository.insertDevice(deviceConfig);
+
+      // 获取或创建 MQTT 服务实例
       final broker1 = getService(deviceConfig.broker, deviceConfig.port);
+
+      // 尝试连接 MQTT
       await broker1.connect(
         host: deviceConfig.broker,
         port: deviceConfig.port,
@@ -145,81 +178,21 @@ class DeviceVM with ChangeNotifier{
         username: deviceConfig.username,
         password: deviceConfig.password,
       );
-      serviceCard[deviceConfig.deviceName] = [];
-
-      // 获取当前时间
-      final now = DateTime.now();
-      final timestampInSeconds = roundDownToHalfHour(now).millisecondsSinceEpoch ~/ 1000;
-
-      // 根据传感器类型创建
-      switch(sensorType){
-        case "青萍二氧化碳和温湿度检测仪":
-          final SensorDataCo2Dao sensorDataCo2Dao = SensorDataCo2Dao();
-          await  sensorDataCo2Dao.insert(
-            "${deviceConfig.clientId}_$configId",
-            SensorDataCo2(configId: configId, datetime: timestampInSeconds, temperature: 255, humidity: 500, co2: 400),
-          );
-          serviceCard[deviceConfig.deviceName] = await sensorDataCo2Dao.queryAll("${deviceConfig.clientId}_${configId.toString()}");
-          break;
-        case "青萍商用温湿度（气压）计（S）":
-          final SensorDataAtmosPressureDao sensorDataAtmosPressureDao = SensorDataAtmosPressureDao();
-          await sensorDataAtmosPressureDao.insert(
-            "${deviceConfig.clientId}_$configId",
-            SensorDataAtmosPressure(configId: configId, datetime: timestampInSeconds, temperature: 255, humidity: 500, atmosPressure: 1000),
-          );
-          serviceCard[deviceConfig.deviceName] = await sensorDataAtmosPressureDao.queryAll("${deviceConfig.clientId}_${configId.toString()}");
-          break;
-        case "青萍商用温湿度计 E" || "青萍墙壁开关式温湿度计":
-          final SensorDataBasicDao sensorDataOnlyTempDao = SensorDataBasicDao();
-          await sensorDataOnlyTempDao.insert(
-            "${deviceConfig.clientId}_$configId",
-            SensorDataBasic(configId: configId, datetime: timestampInSeconds, temperature: 255, humidity: 500),
-          );
-          serviceCard[deviceConfig.deviceName] = await sensorDataOnlyTempDao.queryAll("${deviceConfig.clientId}_${configId.toString()}");
-          break;
-        case "青萍商用多功能检测仪":
-          final SensorDataExternalCo2OrTempDao sensorDataExternalCo2OrTempDao = SensorDataExternalCo2OrTempDao();
-          await sensorDataExternalCo2OrTempDao.insert(
-            "${deviceConfig.clientId}_$configId",
-            SensorDataExternalCo2OrTemp(configId: configId, datetime: timestampInSeconds, temperature: 255, humidity: 0, externalCo2: -1, externalTemperature: -1),
-          );
-          serviceCard[deviceConfig.deviceName] = await sensorDataExternalCo2OrTempDao.queryAll("${deviceConfig.clientId}_${configId.toString()}");
-          break;
-        case "青萍墙壁插座式温度计":
-          final SensorDataBasicDao sensorDataOnlyTempDao = SensorDataBasicDao();
-          await sensorDataOnlyTempDao.insert(
-            "${deviceConfig.clientId}_$configId",
-            SensorDataBasic(configId: configId, datetime: timestampInSeconds, temperature: 255, humidity: 0),
-          );
-          serviceCard[deviceConfig.deviceName] = await sensorDataOnlyTempDao.queryAll("${deviceConfig.clientId}_${configId.toString()}");
-          break;
-        case "青萍室内环境检测仪":
-          final SensorDataCo2Pm25Pm10VocNoiseLuxDao sensorDataCo2Pm25Pm10VocNoiseLuxDao = SensorDataCo2Pm25Pm10VocNoiseLuxDao();
-          await sensorDataCo2Pm25Pm10VocNoiseLuxDao.insert(
-            "${deviceConfig.clientId}_$configId",
-            SensorDataCo2Pm25Pm10VocNoiseLux(
-              configId: configId,
-              datetime: timestampInSeconds,
-              temperature: 255,
-              humidity: 0,
-              co2: 400,
-              pm25: 25,
-              pm10: 25,
-              voc: 0,
-              noise: 50,
-              lux: 100,
-            ),
-          );
-          serviceCard[deviceConfig.deviceName] = await sensorDataCo2Pm25Pm10VocNoiseLuxDao.queryAll("${deviceConfig.clientId}_${configId.toString()}");
-          break;
-        case "青萍空气检测仪":
-          break;
-        case "青萍空气检测仪 2":
-          break;
-        case "青萍空气检测仪 Lite":
-          break;
+      // 检查连接
+      if (!broker1.isConnected) {
+        log('MQTT 连接失败，无法添加设备: $finalName');
+        await _mqttRepository.deleteDevice(deviceConfig.clientId, newConfig);
+        return false;
       }
+      sensorCard[finalName] = [];
+
+      // 检查是否已经存在对该主题的订阅，如果有则先取消
+      if (broker1.isSubscribed(deviceConfig.upTopic)) {
+        broker1.unsubscribe(deviceConfig.upTopic);
+      }
+
       broker1.subscribe(deviceConfig.upTopic, (topic, payload) async {
+        log("收到消息: $payload");
         final newConfig = await _configDao.getByClientId(deviceConfig.clientId);
         if(newConfig != null){
           await _handleData(
@@ -228,11 +201,49 @@ class DeviceVM with ChangeNotifier{
           );
         }
       });
-      return true;
-    } catch (e) {
-      log('添加设备失败: $e');
+
+      // 创建 Completer 用于异步等待结果
+      final completer = Completer<bool>();
+
+      // 启动监听：如果 serviceCard 被更新，则视为成功
+      void listener() {
+        final dataList = sensorCard[finalName];
+        if (dataList != null && dataList.isNotEmpty) {
+          log('检测到 $finalName 收到有效数据，设备添加成功');
+          isLoading = false;
+          notifyListeners();
+          if (!completer.isCompleted) {
+            completer.complete(true);
+          }
+        }
+      }
+
+      addListener(listener);
+      // 超时机制
+      Future.delayed(const Duration(seconds: 10), () {
+        if (!completer.isCompleted) {
+          log('设备 $finalName 添加超时（10秒内未收到有效数据）');
+          completer.complete(false);
+        }
+      });
+
+      await publishMessage();
+
+      final result = await completer.future;
+      removeListener(listener);
+
+      if(result == false){
+        _mqttRepository.deleteDevice(deviceConfig.clientId, newConfig);
+        sensorCard.remove(deviceConfig.deviceName);
+        broker1.unsubscribe(deviceConfig.upTopic);
+        broker1.disconnect();
+      }
+      return result;
+    } catch (e, stack) {
+      log('添加设备失败: $e\n$stack');
       return false;
     }finally{
+      isLoading = false;
       notifyListeners();
     }
   }
@@ -250,7 +261,7 @@ class DeviceVM with ChangeNotifier{
       log("开始解码   数据长度：${length.toString()}");
       switch (payload[2]) {
         case 0x35: // 时间设置
-          decodeDataBy0x35(length,payload);
+          decode.decodeDataBy0x35(length,payload);
           break;
         case 0x41 || 0x42 || 0x43: // 实时数据上报、历史数据上报、临时数据上报
           await decodeDateBy0x41And0x42And0x43(
@@ -268,33 +279,6 @@ class DeviceVM with ChangeNotifier{
     } catch (e) {
       log('解码传感器数据失败: $e');
     }
-  }
-
-  void decodeDataBy0x35(int length, Uint8List payload){
-    String logText = "0x35-- ";
-    int index = 5;
-    final decode = QingPingCo2TemperatureHumidityDecoder();
-    while(length < length-2){
-      final dataType = payload[index];
-      final len = decode.combineLittleEndianAndToNum([payload[index+1], payload[index+2]]);
-      switch(dataType) {
-        case 0x15:  // 时间戳
-          final time = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          // log("$dataType-时间戳: $time  时间：${DateTime.fromMillisecondsSinceEpoch(time * 1000)}");
-          logText += "  $dataType-时间戳: $time  时间：${DateTime.fromMillisecondsSinceEpoch(time * 1000)}";
-        case 0x1D:  // 断开设备连接
-        // log("断开设备连接?: ${payload[index+3] == 0 ? "还有数据未发送完" : "数据已发送完"}");
-          logText += "  断开设备连接?: ${payload[index+3] == 0 ? "还有数据未发送完" : "数据已发送完"}";
-          break;
-        case 0x38:  // 产品ID
-          final id = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          // log("$dataType-产品ID: $id");
-          logText += "  产品ID: $id";
-          break;
-      }
-      index += 3+len;
-    }
-    log(logText);
   }
 
   Future<void> decodeDateBy0x41And0x42And0x43({
@@ -327,18 +311,21 @@ class DeviceVM with ChangeNotifier{
               log("插入新数据 id:${data.configId} datetime: ${data.datetime} temp: ${data.temperature}");
               final sensorDataOnlyTempDao = SensorDataBasicDao();
               if(messageType == 0x43){
-                serviceCard[deviceConfig.deviceName]?.add(data);
+                sensorCard[deviceConfig.deviceName]?.add(data);
+                log(sensorCard[deviceConfig.deviceName]?[-1].datetime.toString() ?? "0插入");
               }else if(messageType == 0x41){
-                serviceCard[deviceConfig.deviceName]?[serviceCard[deviceConfig.deviceName]!.length - 1] = data;
+                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
+                log("收到实时数据");
               }else{
-                if(serviceCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = serviceCard[deviceConfig.deviceName]?.removeLast();
-                  serviceCard[deviceConfig.deviceName]?.add(data);
-                  serviceCard[deviceConfig.deviceName]?.add(temp!);
+                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
+                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
+                  sensorCard[deviceConfig.deviceName]?.add(data);
+                  sensorCard[deviceConfig.deviceName]?.add(temp!);
                 }
                 if (deviceConfig.configId != null) {
                   await sensorDataOnlyTempDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
                 }
+                log("收到历史数据");
               }
               break;
             case 0x03:
@@ -351,14 +338,14 @@ class DeviceVM with ChangeNotifier{
               log("插入新数据 id:${data.configId} datetime: ${data.datetime} atmosPressure:${data.atmosPressure} temp: ${data.temperature} humi:${data.humidity}");
               final sensorDataAtmosPressureDao = SensorDataAtmosPressureDao();
               if(messageType == 0x43){
-                serviceCard[deviceConfig.deviceName]?.add(data);
+                sensorCard[deviceConfig.deviceName]?.add(data);
               }else if(messageType == 0x41){
-                serviceCard[deviceConfig.deviceName]?[serviceCard[deviceConfig.deviceName]!.length - 1] = data;
+                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
               }else{
-                if(serviceCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = serviceCard[deviceConfig.deviceName]?.removeLast();
-                  serviceCard[deviceConfig.deviceName]?.add(data);
-                  serviceCard[deviceConfig.deviceName]?.add(temp!);
+                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
+                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
+                  sensorCard[deviceConfig.deviceName]?.add(data);
+                  sensorCard[deviceConfig.deviceName]?.add(temp!);
                 }
                 if (deviceConfig.configId != null) {
                   await sensorDataAtmosPressureDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
@@ -375,14 +362,15 @@ class DeviceVM with ChangeNotifier{
               log("插入新数据 id:${data.configId} datetime: ${data.datetime} co2:${data.co2} temp: ${data.temperature} humi:${data.humidity}");
               final sensorDataCo2Dao = SensorDataCo2Dao();
               if(messageType == 0x43){
-                serviceCard[deviceConfig.deviceName]?.add(data);
+                sensorCard[deviceConfig.deviceName]?.add(data);
+                log(sensorCard[deviceConfig.deviceName]?.length.toString() ?? "0");
               }else if(messageType == 0x41){
-                serviceCard[deviceConfig.deviceName]?[serviceCard[deviceConfig.deviceName]!.length - 1] = data;
+                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
               }else{
-                if(serviceCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = serviceCard[deviceConfig.deviceName]?.removeLast();
-                  serviceCard[deviceConfig.deviceName]?.add(data);
-                  serviceCard[deviceConfig.deviceName]?.add(temp!);
+                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
+                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
+                  sensorCard[deviceConfig.deviceName]?.add(data);
+                  sensorCard[deviceConfig.deviceName]?.add(temp!);
                 }
                 if (deviceConfig.configId != null) {
                   await sensorDataCo2Dao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
@@ -400,14 +388,14 @@ class DeviceVM with ChangeNotifier{
               log("插入新数据 id:${data.configId} datetime: ${data.datetime} externalCo2:${data.externalCo2} temp: ${data.temperature} humi: ${data.humidity} externalTemp: ${data.externalTemperature}");
               final sensorDataExternalCo2OrTempDao = SensorDataExternalCo2OrTempDao();
               if(messageType == 0x43){
-                serviceCard[deviceConfig.deviceName]?.add(data);
+                sensorCard[deviceConfig.deviceName]?.add(data);
               }else if(messageType == 0x41){
-                serviceCard[deviceConfig.deviceName]?[serviceCard[deviceConfig.deviceName]!.length - 1] = data;
+                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
               }else{
-                if(serviceCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = serviceCard[deviceConfig.deviceName]?.removeLast();
-                  serviceCard[deviceConfig.deviceName]?.add(data);
-                  serviceCard[deviceConfig.deviceName]?.add(temp!);
+                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
+                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
+                  sensorCard[deviceConfig.deviceName]?.add(data);
+                  sensorCard[deviceConfig.deviceName]?.add(temp!);
                 }
                 if (deviceConfig.configId != null) {
                   await sensorDataExternalCo2OrTempDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
@@ -424,14 +412,14 @@ class DeviceVM with ChangeNotifier{
               log("插入新数据 id:${data.configId} datetime: ${data.datetime} co2:${data.co2} temp: ${data.temperature} humi:${data.humidity}");
               final sensorDataCo2Pm25Pm10VocNoiseLuxDao = SensorDataCo2Pm25Pm10VocNoiseLuxDao();
               if(messageType == 0x43){
-                serviceCard[deviceConfig.deviceName]?.add(data);
+                sensorCard[deviceConfig.deviceName]?.add(data);
               }else if(messageType == 0x41){
-                serviceCard[deviceConfig.deviceName]?[serviceCard[deviceConfig.deviceName]!.length - 1] = data;
+                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
               }else{
-                if(serviceCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = serviceCard[deviceConfig.deviceName]?.removeLast();
-                  serviceCard[deviceConfig.deviceName]?.add(data);
-                  serviceCard[deviceConfig.deviceName]?.add(temp!);
+                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
+                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
+                  sensorCard[deviceConfig.deviceName]?.add(data);
+                  sensorCard[deviceConfig.deviceName]?.add(temp!);
                 }
                 if (deviceConfig.configId != null) {
                   await sensorDataCo2Pm25Pm10VocNoiseLuxDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);

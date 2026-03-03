@@ -13,13 +13,18 @@ class SensorDataCo2Dao {
     final db = await this.db;
     await db.execute('''
       CREATE TABLE IF NOT EXISTS $tableName(
-        config_id TEXT NOT NULL,
+        config_id INTEGER NOT NULL,
         datetime INTEGER NOT NULL,
         temperature INTEGER NOT NULL,
         humidity INTEGER NOT NULL,
         co2 INTEGER NOT NULL
       );
     ''');
+  }
+  Future<int> deleteTable(String tableName) async {
+    final db = await this.db;
+    return await db.delete(tableName);
+
   }
 
   Future<int> insert(String tableName, SensorDataCo2 data) async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/route/route_utils.dart';
+import 'package:sensor_hub/ui/profile/view_model/profile_vm.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../core/ui/custom_app_bar.dart';
 import '../../main/app_vm.dart';
@@ -33,7 +34,8 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
           colorScheme: colorScheme,
           onFinish: () {
             final appVM = Provider.of<AppVM>(context, listen: false);
-            appVM.changedThemeModelSelectedValue();
+            final profileVM = Provider.of<ProfileVM>(context, listen: false);
+            profileVM.saveTheme(appVM);
             RouteUtils.pop(context);
           }
       ),
@@ -88,78 +90,66 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
                 left: 2.w,
                 right: 2.w,
                 child: Container(
-                  width: 48.w,
-                  height: 18.h,
+                  width: double.infinity,
+                  height: 28.h,
                   decoration: BoxDecoration(
-                    color: value == ThemeMode.dark ? Color(0x33FFFFFF) : value == ThemeMode.system ? Color(0xCC000000) : Color(0xFFFFFFFF),
-                    borderRadius: BorderRadius.circular(4.r),
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(4.r)
                   ),
                 ),
-              ),
-              Positioned(
-                top: 40.h,
-                left: 2.w,
-                right: 2.w,
-                child: Container(
-                  width: 48.w,
-                  height: 18.h,
-                  decoration: BoxDecoration(
-                    color: value == ThemeMode.dark ? Color(0x33FFFFFF) : Color(0xFFFFFFFF),
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                ),
-              ),
+              )
             ],
           ),
           Text(
             title,
             style: TextStyle(
-              fontSize: 14.sp,
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
+                color: value == themeModelSelectedValue ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                fontSize: 14.sp,
+                fontWeight: value == themeModelSelectedValue ? FontWeight.bold : FontWeight.normal
             ),
-          ),
-          Radio<ThemeMode>(value: value,)
+          )
         ],
       ),
     );
   }
+
   Widget _themeModelGroupCart({
     required ColorScheme colorScheme,
-    required AppLocalizations appText
+    required AppLocalizations appText,
   }){
-    return Consumer<AppVM>(builder: (context,vm,child){
-      return Container(
-        height: 260.h,
-        width: double.infinity,
-        color: colorScheme.surface,
-        child: RadioGroup<ThemeMode>(
-          groupValue: vm.tempSelectedValue,
-          onChanged: (ThemeMode? value) {
-            vm.changedTempSelectedValue(value);
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _themeModelCardItem(
-                colorScheme: colorScheme,
-                value: ThemeMode.system,
-                title: appText.profile_screen_follow_system
+    final List<List<String>> themeModelList = [
+      [appText.profile_screen_light_mode,"Icons.wb_sunny_outlined",ThemeMode.light.toString()],
+      [appText.profile_screen_dark_mode,"Icons.wb_moon_outlined",ThemeMode.dark.toString()],
+      [appText.profile_screen_follow_system,"Icons.contrast_outlined",ThemeMode.system.toString()],
+    ];
+    return Consumer2<ProfileVM, AppVM>(builder: (context, profileVM, appVM, child){
+      // 初始化临时值
+      if (profileVM.tempSelectedValue == null) {
+        profileVM.initFromAppVM(appVM);
+      }
+      
+      themeModelSelectedValue = profileVM.tempSelectedValue ?? appVM.themeModelSelectedValue;
+      return Column(
+        children: List.generate(
+            themeModelList.length, (index) {
+          ThemeMode value = ThemeMode.values[index];
+          return RadioListTile<ThemeMode>(
+            title: Text(
+              themeModelList[index][0],
+              style: TextStyle(
+                fontSize: 16.sp,
               ),
-              _themeModelCardItem(
-                  colorScheme: colorScheme,
-                  value: ThemeMode.light,
-                  title: appText.profile_screen_light_mode
-              ),
-              _themeModelCardItem(
-                  colorScheme: colorScheme,
-                  value: ThemeMode.dark,
-                  title: appText.profile_screen_dark_mode
-              )
-            ],
-          ),
-        ),
+            ),
+            value: value,
+            groupValue: themeModelSelectedValue,
+            onChanged: (ThemeMode? value) {
+              profileVM.changedTempThemeValue(value);
+            },
+          );
+        }).toList(),
       );
     });
   }
+  late ThemeMode themeModelSelectedValue;
 }
+

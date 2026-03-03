@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-
+import 'dart:typed_data';
 typedef MqttMessageCallback = void Function(String topic, List<int> payload);
 typedef MqttConnectionStatusCallback = void Function(bool connected);
 
@@ -120,6 +119,36 @@ class MqttService {
     });
   }
 
+  Future<void> publish({
+    required String topic,
+    required dynamic payload,
+    MqttQos qos = MqttQos.atLeastOnce,
+    bool retain = false,
+  }) async {
+    if(!isConnected){
+      log("'MQTT 未连接，无法发布消息到 $topic'");
+      return;
+    }
+    final builder = MqttClientPayloadBuilder();
+    if(payload is String){
+      builder.addString(payload);
+    }else if(payload is List<int>){
+      final temp = Uint8List.fromList(payload);
+      for(final byte in temp){
+        builder.addByte(byte);
+      }
+    }else{
+      log('MQTT 发布失败：不支持的 payload 类型 ${payload.runtimeType}');
+      return;
+    }
+    try{
+      _client.publishMessage(topic, qos, builder.payload!, retain: retain);
+      log("已发布消息到 $topic");
+    } catch(e){
+      log('MQTT 发布失败: $e');
+    }
+  }
+
   // 订阅 topic 并注册回调
   void subscribe(String topic, MqttMessageCallback callback) {
     if (_client.connectionStatus?.state != MqttConnectionState.connected) {
@@ -141,6 +170,11 @@ class MqttService {
     } catch (e) {
       log('订阅失败 $topic: $e');
     }
+  }
+
+  // 检查是否已订阅指定主题
+  bool isSubscribed(String topic) {
+    return _subscribedTopics.contains(topic);
   }
 
   // 取消订阅

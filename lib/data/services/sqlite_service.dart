@@ -28,7 +28,7 @@ class SqliteService {
   Future<void> _onCreate(Database db, int version) async {
     //青萍设备表
     await db.execute('''
-      CREATE TABLE QingPingSensor(
+      CREATE TABLE qingping_sensor(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         device_id TEXT NOT NULL,
         serial_number TEXT NOT NULL,
@@ -58,6 +58,17 @@ class SqliteService {
         downTopic TEXT NOT NULL,
         username TEXT NOT NULL,
         password TEXT NOT NULL
+      );
+    ''');
+    await db.execute('''
+      CREATE TABLE notification_messages(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        configId INTEGER NOT NULL,
+        severity INTEGER NOT NULL,
+        sensorName TEXT NOT NULL,
+        sensorType INTEGER NOT NULL,
+        value INTEGER NOT NULL,
+        datetime INTEGER NOT NULL
       );
     ''');
   }

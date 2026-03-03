@@ -101,7 +101,7 @@ class DeviceInfoCard extends StatelessWidget{
             Divider(
               height: 16.h,
               thickness: 1.h,
-              color: colorScheme.outline.withOpacity(0.3),
+              color: colorScheme.outline.withValues(alpha: 0.3),
             ),
             Wrap(
               spacing: 8.w,        // 水平间距
@@ -115,7 +115,7 @@ class DeviceInfoCard extends StatelessWidget{
                         margin: EdgeInsets.zero,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+                          side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
                           borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Padding(

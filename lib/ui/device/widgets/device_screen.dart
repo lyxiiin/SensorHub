@@ -19,11 +19,13 @@ class DeviceScreen extends StatefulWidget {
 
 class _DeviceScreenState extends State<DeviceScreen> {
   late AppLocalizations appText;
+  late DeviceVM viewModel;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final viewModel = Provider.of<DeviceVM>(context, listen: false);
+      // final viewModel = Provider.of<DeviceVM>(context, listen: false);
+      viewModel = context.read<DeviceVM>();
       await viewModel.initData();
     });
   }
@@ -57,7 +59,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       fixedSize: Size(double.infinity, 48.h),
                     ),
                     onPressed: (){
-                      // deviceGroupSheet(context: context);
+
                     },
                     child: Row(
                       children: [
@@ -213,7 +215,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
   Widget deviceList(ColorScheme colorScheme,AppLocalizations appText){
     return Consumer<DeviceVM>(builder: (context,vm,child){
-      if(vm.serviceCard.isEmpty){
+      if(vm.sensorCard.isEmpty){
         return SizedBox.expand(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -258,9 +260,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
         );
       }else{
         return ListView.builder(
-          itemCount: vm.serviceCard.length,
+          itemCount: vm.sensorCard.length,
           itemBuilder: (context,index){
-            final item = vm.serviceCard.entries.elementAt(index);
+            final item = vm.sensorCard.entries.elementAt(index);
             // 添加对null值的检查
             if (item.value.isEmpty) {
               return Container(); // 返回空容器而不是崩溃
