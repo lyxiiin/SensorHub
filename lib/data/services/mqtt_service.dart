@@ -36,7 +36,8 @@ class MqttService {
 
     _client = MqttServerClient(host, clientId ?? 'flutter_client_${DateTime.now().millisecondsSinceEpoch}');
     _client.port = port;
-    _client.logging(on: logging);
+    _client.setProtocolV311();
+    _client.logging(on: false);
     _client.keepAlivePeriod = keepAlive;
     _client.onDisconnected = _onDisconnected;
     _client.onConnected = _onConnected;
@@ -44,11 +45,11 @@ class MqttService {
     if (username != null && password != null) {
       _client.connectionMessage = MqttConnectMessage()
           .withClientIdentifier(_client.clientIdentifier)
-          .startClean()
+          .authenticateAs(username, password)
           .withWillTopic('will')
           .withWillMessage('Client disconnected unexpectedly')
           .withWillQos(MqttQos.atLeastOnce)
-          .authenticateAs(username, password);
+          .startClean();
     }
 
     _connectionStatusController ??= StreamController<bool>.broadcast();
@@ -58,13 +59,6 @@ class MqttService {
   Future<void> _doConnect() async {
     try {
       await _client.connect();
-      if (_client.connectionStatus!.state == MqttConnectionState.connected) {
-        _onConnected();
-        // 重新订阅之前订阅的 topic（断线重连后需要）
-        for (final topic in _subscribedTopics) {
-          _client.subscribe(topic, MqttQos.atLeastOnce);
-        }
-      }
     } catch (e) {
       log('MQTT 连接失败: $e');
       _onDisconnected();
@@ -78,6 +72,10 @@ class MqttService {
     log('MQTT 已连接');
     _connectionStatusController?.add(true);
     _listenToMessages();
+    // 断线重连后需要重新订阅已记录的 topic
+    for (final topic in _subscribedTopics) {
+      _client.subscribe(topic, MqttQos.atLeastOnce);
+    }
   }
 
   void _onDisconnected() {
@@ -97,18 +95,22 @@ class MqttService {
   }
 
   void _listenToMessages() {
+    log('[诊断] _listenToMessages() 被调用，即将设置流监听器');
     // 取消现有的监听器（如果有的话）
     _streamSubscription?.cancel();
     
     _streamSubscription = _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
+      log('[诊断] _client.updates 流收到 ${messages.length} 条消息');
       final message = messages[0];
       final topic = message.topic;
+      log('[诊断] 消息 topic=$topic, payload类型=${message.payload.runtimeType}');
       final publishMsg = message.payload as MqttPublishMessage;
       final payload = publishMsg.payload.message;
 
       // 查找是否有注册的回调
       final callback = _topicCallbacks[topic];
       if (callback != null) {
+        log('[诊断] 找到回调，即将调用 callback($topic, ...)');
         callback(topic, payload);
       } else {
         // 兜底：未注册回调也打印（可选）

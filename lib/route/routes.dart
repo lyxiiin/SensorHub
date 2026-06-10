@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sensor_hub/ui/device/widgets/device_add_page.dart';
 import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/units_conversion_page.dart';
@@ -18,8 +17,6 @@ class Routes{
         return pageRoute(LanguageSelectionPage());
       case RoutePath.unitsConversion:
         return pageRoute(UnitsConversionPage());
-      case RoutePath.deviceAdd:
-        return pageRoute(DeviceAddPage());
       case RoutePath.deviceRegistrationFrom:
         return pageRoute(DeviceRegistrationFormPage());
     }

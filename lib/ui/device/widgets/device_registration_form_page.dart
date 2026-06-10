@@ -23,7 +23,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
   final _nameController = TextEditingController();
   final _brokerController = TextEditingController();
   final _portController = TextEditingController();
-  final _macController = TextEditingController();
+  final _clientIdController = TextEditingController();
   final _upTopicController = TextEditingController();
   final _downTopicController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -33,7 +33,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
     _nameController.dispose();
     _brokerController.dispose();
     _portController.dispose();
-    _macController.dispose();
+    _clientIdController.dispose();
     _upTopicController.dispose();
     _downTopicController.dispose();
     _usernameController.dispose();
@@ -147,19 +147,14 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                     ),
 
                     const SizedBox(height: 16),
-                    // 设备MAC输入框
+                    // 客户端ID输入框
                     _buildTextField(
-                      controller: _macController,
-                      label: "设备MAC",
-                      hint: "请输入设备MAC地址",
+                      controller: _clientIdController,
+                      label: "客户端ID(Client ID)",
+                      hint: "请输入MQTT客户端ID",
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return "MAC地址不能为空";
-                        }
-                        // 简单的MAC地址格式验证 (AA:BB:CC:DD:EE:FF)
-                        final macRegex = RegExp(r'^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$');
-                        if (!macRegex.hasMatch(value)) {
-                          return "请输入有效的MAC地址格式";
+                          return "客户端ID不能为空";
                         }
                         return null;
                       },
@@ -326,7 +321,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       name: _nameController.text.trim(),
       broker: _brokerController.text.trim(),
       port: int.parse(_portController.text.trim()),
-      mac: _macController.text.trim(),
+      clientId: _clientIdController.text.trim(),
       upTopic: _upTopicController.text.trim(),
       downTopic: _downTopicController.text.trim(),
       username: _usernameController.text.trim(),

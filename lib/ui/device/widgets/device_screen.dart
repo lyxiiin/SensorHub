@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
@@ -113,7 +114,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
             icon: Icon(Icons.add, color: colorScheme.onSurface),
             iconSize: 28.h,
             onPressed: () {
-              RouteUtils.pushForNamed(context, RoutePath.deviceAdd);
+              RouteUtils.pushForNamed(context, RoutePath.deviceRegistrationFrom);
             },
           ),
         ],
@@ -215,7 +216,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
   Widget deviceList(ColorScheme colorScheme,AppLocalizations appText){
     return Consumer<DeviceVM>(builder: (context,vm,child){
-      if(vm.sensorCard.isEmpty){
+      if(vm.latestReadings.isEmpty){
         return SizedBox.expand(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -258,29 +259,35 @@ class _DeviceScreenState extends State<DeviceScreen> {
             ],
           ),
         );
-      }else{
+      } else {
         return ListView.builder(
-          itemCount: vm.sensorCard.length,
-          itemBuilder: (context,index){
-            final item = vm.sensorCard.entries.elementAt(index);
-            // 添加对null值的检查
-            if (item.value.isEmpty) {
-              return Container(); // 返回空容器而不是崩溃
+          itemCount: vm.latestReadings.length,
+          itemBuilder: (context, index) {
+            final entry = vm.latestReadings.entries.elementAt(index);
+            final deviceName = entry.key;
+            final readings = entry.value;
+
+            // 构建显示用的 Map：{ "温度": "25.5", "湿度": "65.0", ... }
+            final displayMap = <String, String>{};
+            // 取所有读数中最新的时间戳
+            int latestTimestamp = 0;
+            for (final m in readings.values) {
+              displayMap[m.sensorType.displayName] = m.formattedValue;
+              if (m.timestamp > latestTimestamp) {
+                latestTimestamp = m.timestamp;
+              }
             }
-            final lastItemIndex = item.value.length - 1;
-            final map = item.value[lastItemIndex].toMap();
-            map.remove('config_id');
-            map.remove('datetime');
             return Padding(
-              padding: EdgeInsets.only(left: 12.w,right: 12.w,bottom: 12.w),
+              padding: 
+                  EdgeInsets.only(left: 12.w, right: 12.w, bottom: 12.w),
               child: DeviceInfoCard(
                 colorScheme: colorScheme,
-                name: item.key,
-                time: lastItemIndex >= 0 ? vm.getMinutesDifference(item.value[lastItemIndex].datetime).toString() : "0",
-                dateList: map,
-                onTap: (){
-
-                },
+                name: deviceName,
+                time: latestTimestamp > 0
+                    ? vm.getMinutesDifference(latestTimestamp).toString()
+                    : "—",
+                dateList: readings,
+                onTap: () {},
               ),
             );
           },
@@ -288,27 +295,4 @@ class _DeviceScreenState extends State<DeviceScreen> {
       }
     });
   }
-
-  // Future<dynamic> deviceGroupSheet({required BuildContext context}){
-  //   return showModalBottomSheet(
-  //     constraints: BoxConstraints(
-  //       maxHeight: 0.8.sh
-  //     ),
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-  //     ),
-  //     scrollControlDisabledMaxHeightRatio: 0.8,
-  //     showDragHandle: true,
-  //     context: context,
-  //     builder: (context){
-  //       return Consumer<DeviceVM>(builder: (context,vm,child){
-  //         return SizedBox(
-  //           height: 0.8.sh,
-  //           child: DeviceGroupSheetContent(deviceGroups: vm.userDeviceGroups, onclick: () {  },),
-  //         );
-  //       });
-  //     }
-  //   );
-  // }
-
 }

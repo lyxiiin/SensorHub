@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:sensor_hub/data/models/sensor_type.dart';
 
 import '../../../l10n/app_localizations.dart';
 
@@ -36,7 +37,7 @@ class DeviceInfoCard extends StatelessWidget{
   final String? icon;
   final String? name;
   final String? time;
-  final Map<String,dynamic> dateList;
+  final Map<SensorType,dynamic> dateList;
   final GestureTapCallback? onTap;
   const DeviceInfoCard({
     super.key,
@@ -133,7 +134,7 @@ class DeviceInfoCard extends StatelessWidget{
                               ),
                               SizedBox(width: 6.w),
                               Text(
-                                  labelMap[entry.key] ?? "999",
+                                  entry.key.displayName,
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: colorScheme.onSurfaceVariant,
@@ -142,7 +143,7 @@ class DeviceInfoCard extends StatelessWidget{
                                 ),
                               Spacer(),
                               Text(
-                                  "${restoreOriginalValue(entry.key,entry.value)} ${labelUnitMap[entry.key] ?? "999"}",
+                                  "${entry.value.formattedValue} ${entry.key.unit}",
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: colorScheme.onSurfaceVariant,

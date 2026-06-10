@@ -20,33 +20,12 @@ class SqliteService {
     final dbPath = join(directory.path, 'sensor_hub_database.db');
     return await openDatabase(
       dbPath,
-      version: 1,
+      version: 2,
       onCreate:_onCreate,
       onUpgrade: _onUpgrade,
     );
   }
   Future<void> _onCreate(Database db, int version) async {
-    //青萍设备表
-    await db.execute('''
-      CREATE TABLE qingping_sensor(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        device_id TEXT NOT NULL,
-        serial_number TEXT NOT NULL,
-        collection_interval INTEGER NOT NULL,
-        upload_interval INTEGER NOT NULL,
-        firmware_version TEXT NOT NULL,
-        hardware_version TEXT NOT NULL,
-        comm_module_version TEXT NOT NULL,
-        mcu_version TEXT NOT NULL,
-        product_id TEXT NOT NULL,
-        pm_sensor_sn TEXT NOT NULL,
-        screen_type INTEGER NOT NULL,
-        power_type INTEGER NOT NULL,
-        wifi_support INTEGER NOT NULL,
-        has_rs485 INTEGER NOT NULL,
-        probe_type TEXT NOT NULL
-      );
-    ''');
     await db.execute('''
       CREATE TABLE device_configs (
         configId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,12 +50,60 @@ class SqliteService {
         datetime INTEGER NOT NULL
       );
     ''');
+    // 时序数据表（窄表）
+    db.execute('''
+      CREATE TABLE measurements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        config_id INTEGER NOT NULL,
+        sensor_type TEXT NOT NULL,
+        value INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL
+      );
+    ''');
+
+    // 为常用查询创建索引
+    db.execute('''
+      CREATE INDEX idx_measurements_config_type_time
+        ON measurements(config_id, sensor_type, timestamp);
+    ''');
+
+    // 设备最新快照表
+    db.execute('''
+      CREATE TABLE device_latest (
+        config_id INTEGER NOT NULL,
+        sensor_type TEXT NOT NULL,
+        value INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL,
+        PRIMARY KEY (config_id, sensor_type)
+      );
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // 示例：如果未来要加新表或字段，可在此处理
     if (oldVersion < 2) {
-      // await db.execute('ALTER TABLE ...');
+      await db.execute('''
+      CREATE TABLE IF NOT EXISTS measurements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        config_id INTEGER NOT NULL,
+        sensor_type TEXT NOT NULL,
+        value INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL
+      );
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_measurements_config_type_time
+        ON measurements(config_id, sensor_type, timestamp);
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS device_latest (
+        config_id INTEGER NOT NULL,
+        sensor_type TEXT NOT NULL,
+        value INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL,
+        PRIMARY KEY (config_id, sensor_type)
+      );
+    ''');
     }
   }
 }

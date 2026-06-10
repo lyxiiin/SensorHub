@@ -1,26 +1,25 @@
 import 'dart:developer';
-import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/widgets.dart';
-import 'package:sensor_hub/data/dao/qingping_sensor_state_dao.dart';
-import 'package:sensor_hub/data/dao/sensor_data_atmos_pressure_dao.dart';
-import 'package:sensor_hub/data/dao/sensor_data_co2_dao.dart';
-import 'package:sensor_hub/data/dao/sensor_data_co2_pm25_pm10_voc_noise_lux_dao.dart';
-import 'package:sensor_hub/data/dao/sensor_data_basic_dao.dart';
-import 'package:sensor_hub/data/dao/sensor_data_external_co2_or_temp_dao.dart';
-import 'package:sensor_hub/data/decoders/qingping/qingping_co2_temperature_humidity_decoder.dart';
-import 'package:sensor_hub/data/models/sensor_data.dart';
 import 'package:sensor_hub/data/repositories/mqtt_repository.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/services/mqtt_service.dart';
 
+import 'package:sensor_hub/data/dao/measurement_dao.dart';
+import 'package:sensor_hub/data/models/measurement.dart';
+import 'package:sensor_hub/data/models/sensor_type.dart';
+import 'package:sensor_hub/data/models/device_profile.dart';
+import 'package:sensor_hub/data/decoders/payload_decoder.dart';
+
+
 class DeviceVM with ChangeNotifier{
   late final MqttRepository _mqttRepository;
   late final DeviceConfigDao _configDao;
-  int deviceCount = 0;
+  int get deviceCount => latestReadings.length;
   final Map<String, MqttService> _services = {};
-  final Map<String, List<SensorData>> sensorCard = {};
+  final Map<String, DeviceProfile> deviceProfiles = {};               // 设备名 → 配置
+  final Map<String, Map<SensorType, Measurement>> latestReadings = {}; // 设备名 → (传感器类型 → 最新读数)
   bool isLoading = false;
   bool _initEd = false;
   bool _initializing = false;
@@ -57,10 +56,9 @@ class DeviceVM with ChangeNotifier{
     }
   }
 
-  Future<void> publishMessage() async {
-    final tt = getService("8.163.13.154", 1883);
-    final temp = [0x43, 0x47, 0x3D, 0x05, 0x00, 0x42, 0x02, 0x00, 0x02, 0x00, 0x12, 0x01];
-    await tt.publish(topic: "qingping/58:2D:34:70:E3:46/down", payload: temp);
+  Future<void> publishMessage({required String topic, required List<int> payload}) async {
+    // TODO: 由自定义传感器实现具体的发布逻辑
+    log('发布消息到主题: $topic, payload长度: ${payload.length}');
   }
 
   // 使用 host:port 作为唯一 key
@@ -76,31 +74,44 @@ class DeviceVM with ChangeNotifier{
     notifyListeners();
   }
 
-  Future<void> connectAllSavedDevices() async {
-    final devicesConfig = await _mqttRepository.getLocalSavedDevices();
-    log("初始化：-读取到 ${devicesConfig.length} 个设备");
-    
-    // 先遍历所有设备，从数据库加载历史数据，初始化 sensorCard
-    for (final deviceConfig in devicesConfig) {
-      final sensorDao = SensorDataCo2Dao();
-      if (deviceConfig.configId != null) {
-        final String tableName = "${deviceConfig.clientId}_${deviceConfig.configId.toString()}";
-        // 确保configId不为空时才创建表名并查询
-        sensorCard[deviceConfig.deviceName] = await sensorDao.queryAll(tableName);
-      } else {
-        log('警告: 设备 ${deviceConfig.deviceName} 的 configId 为空，无法加载历史数据');
-        // 即使 configId 为空，也初始化一个空列表，避免后续操作出现 null 错误
-        sensorCard[deviceConfig.deviceName] = [];
+Future<void> connectAllSavedDevices() async {
+  final devicesConfig = await _mqttRepository.getLocalSavedDevices();
+  log("初始化：读取到 ${devicesConfig.length} 个设备");
+
+  // 遍历所有设备，从数据库恢复最新读数快照，初始化内存缓存
+  for (final deviceConfig in devicesConfig) {
+    if (deviceConfig.configId != null) {
+      // 从 device_latest 快照表恢复最新数据
+      final dao = MeasurementDao();
+      final latest = await dao.queryLatest(deviceConfig.configId!);
+      latestReadings[deviceConfig.deviceName] = latest;
+
+      // 根据已有数据自动构建 DeviceProfile
+      if (latest.isNotEmpty) {
+        deviceProfiles[deviceConfig.deviceName] = DeviceProfile(
+          configId: deviceConfig.configId!,
+          deviceName: deviceConfig.deviceName,
+          sensors: latest.keys.toList(),
+          payloadVersion: 1,
+        );
       }
+    } else {
+      log('警告: 设备 ${deviceConfig.deviceName} 的 configId 为空，无法恢复数据');
+      latestReadings[deviceConfig.deviceName] = {};
     }
-
-    // 再遍历所有设备，建立 MQTT 连接
-    for (final deviceConfig in devicesConfig) {
-      await connectDeviceToMqtt(deviceConfig);
-    }
-
-    _initEd = true;
   }
+
+  // 建立 MQTT 连接（订阅数据），跳过 configId 为空的设备
+  for (final deviceConfig in devicesConfig) {
+    if (deviceConfig.configId == null) {
+      log('跳过 configId 为空的设备: ${deviceConfig.deviceName}');
+      continue;
+    }
+    await connectDeviceToMqtt(deviceConfig);
+  }
+
+  _initEd = true;
+}
 
   Future<void> connectDeviceToMqtt(DeviceConfig deviceConfig) async {
     final broker1 = getService(deviceConfig.broker, deviceConfig.port);
@@ -118,15 +129,12 @@ class DeviceVM with ChangeNotifier{
     }
 
     broker1.subscribe(deviceConfig.upTopic, (topic, payload) async {
-      log("收到消息: $payload");
-      final newConfig = await _configDao.getByClientId(deviceConfig.clientId);
-      if(newConfig != null){
-        await _handleData(
-          deviceConfig: newConfig,
-          payload: Uint8List.fromList(payload),
-        );
+      // SDTP 协议：payload 是十六进制编码的字符串
+      try {
+        await _handleSdtpMessage(deviceConfig, payload);
+      } catch (e) {
+        log('数据处理失败: $e');
       }
-      notifyListeners();
     });
   }
 
@@ -137,7 +145,7 @@ class DeviceVM with ChangeNotifier{
     required String name,
     required String broker,
     required int port,
-    required String mac,
+    required String clientId,
     required String upTopic,
     required String downTopic,
     required String username,
@@ -148,14 +156,27 @@ class DeviceVM with ChangeNotifier{
 
     // 避免设备名重复：如果已存在，则追加 (1)
     String finalName = name;
-    if (sensorCard.containsKey(name)) {
+    if (deviceProfiles.containsKey(name)) {
       finalName = "$name(1)";
     }
     try{
-      final String clientId = "qingping_${mac.replaceAll(':', '_')}";
-      final DeviceConfig deviceConfig = DeviceConfig(
+      // 插入设备配置到数据库（configId 由数据库自增生成）
+      final configId = await _mqttRepository.insertDevice(DeviceConfig(
         broker: broker,
-        deviceName: finalName,
+        deviceName: name,
+        port: port,
+        clientId: clientId,
+        upTopic: upTopic,
+        downTopic: downTopic,
+        username: username,
+        password: password,
+      ));
+
+      // 用数据库返回的 configId 构造完整的 DeviceConfig
+      final deviceConfig = DeviceConfig(
+        configId: configId,
+        broker: broker,
+        deviceName: name,
         port: port,
         clientId: clientId,
         upTopic: upTopic,
@@ -163,9 +184,6 @@ class DeviceVM with ChangeNotifier{
         username: username,
         password: password,
       );
-
-      // 插入设备配置到数据库
-      final newConfig = await _mqttRepository.insertDevice(deviceConfig);
 
       // 获取或创建 MQTT 服务实例
       final broker1 = getService(deviceConfig.broker, deviceConfig.port);
@@ -181,10 +199,10 @@ class DeviceVM with ChangeNotifier{
       // 检查连接
       if (!broker1.isConnected) {
         log('MQTT 连接失败，无法添加设备: $finalName');
-        await _mqttRepository.deleteDevice(deviceConfig.clientId, newConfig);
+        await _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
         return false;
       }
-      sensorCard[finalName] = [];
+      latestReadings[finalName] = {};
 
       // 检查是否已经存在对该主题的订阅，如果有则先取消
       if (broker1.isSubscribed(deviceConfig.upTopic)) {
@@ -192,29 +210,25 @@ class DeviceVM with ChangeNotifier{
       }
 
       broker1.subscribe(deviceConfig.upTopic, (topic, payload) async {
-        log("收到消息: $payload");
-        final newConfig = await _configDao.getByClientId(deviceConfig.clientId);
-        if(newConfig != null){
-          await _handleData(
-            deviceConfig: newConfig,
-            payload: Uint8List.fromList(payload),
-          );
+        try {
+          await _handleSdtpMessage(deviceConfig, payload);
+        } catch (e) {
+          log('数据处理失败: $e');
         }
       });
 
       // 创建 Completer 用于异步等待结果
       final completer = Completer<bool>();
 
-      // 启动监听：如果 serviceCard 被更新，则视为成功
+      // 启动监听：收到第一次有效数据即视为成功
       void listener() {
-        final dataList = sensorCard[finalName];
-        if (dataList != null && dataList.isNotEmpty) {
+        if (completer.isCompleted) return; // 已判定结果，不再重复处理
+        final readings = latestReadings[finalName];
+        if (readings != null && readings.isNotEmpty) {
           log('检测到 $finalName 收到有效数据，设备添加成功');
           isLoading = false;
           notifyListeners();
-          if (!completer.isCompleted) {
-            completer.complete(true);
-          }
+          completer.complete(true);
         }
       }
 
@@ -227,14 +241,13 @@ class DeviceVM with ChangeNotifier{
         }
       });
 
-      await publishMessage();
-
       final result = await completer.future;
       removeListener(listener);
 
       if(result == false){
-        _mqttRepository.deleteDevice(deviceConfig.clientId, newConfig);
-        sensorCard.remove(deviceConfig.deviceName);
+        _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
+        deviceProfiles.remove(deviceConfig.deviceName);
+        latestReadings.remove(deviceConfig.deviceName);
         broker1.unsubscribe(deviceConfig.upTopic);
         broker1.disconnect();
       }
@@ -247,259 +260,45 @@ class DeviceVM with ChangeNotifier{
       notifyListeners();
     }
   }
-  //二氧化碳与温湿度
-  Future<void> _handleData({
-    required DeviceConfig deviceConfig,
-    required Uint8List payload,
-  }) async {
-    try{
-      final decode = QingPingCo2TemperatureHumidityDecoder();
-      if (payload.length < 5) {
-        return;
-      }
-      final length = decode.combineLittleEndianAndToNum([payload[3], payload[4]]);
-      log("开始解码   数据长度：${length.toString()}");
-      switch (payload[2]) {
-        case 0x35: // 时间设置
-          decode.decodeDataBy0x35(length,payload);
-          break;
-        case 0x41 || 0x42 || 0x43: // 实时数据上报、历史数据上报、临时数据上报
-          await decodeDateBy0x41And0x42And0x43(
-            messageType: payload[2],
-            len: length,
-            payload: payload,
-            deviceConfig: deviceConfig,
-            callback: () {  },
-          );
-          break;
-        case 0x44: // 报警信息上传
-        // TODO: 实现事件数据解码
-          break;
-      }
-    } catch (e) {
-      log('解码传感器数据失败: $e');
+
+  /// MQTT 消息处理（SDTP 解码 → 存储 → 缓存更新）
+  Future<void> _handleSdtpMessage(DeviceConfig config, dynamic payload) async {
+    if (config.configId == null) {
+      log('[错误] 设备 ${config.deviceName} 的 configId 为空，无法处理消息');
+      return;
     }
+
+    String hexStr;
+    if (payload is String) {
+      hexStr = payload;
+    } else {
+      hexStr = String.fromCharCodes(payload);
+    }
+
+    log('[诊断] 收到 ${config.deviceName} 消息: hex长度=${hexStr.length}, configId=${config.configId}');
+
+    final measurements = PayloadDecoder.decode(
+      hexStr,
+      configId: config.configId!,
+    );
+
+    if (measurements.isEmpty) return;
+
+    await MeasurementDao().insertBatch(measurements);
+
+    final latest = latestReadings[config.deviceName] ?? {};
+    for (final m in measurements) {
+      latest[m.sensorType] = m;
+    }
+    latestReadings[config.deviceName] = latest;
+
+    _autoDetectProfile(config, measurements);
+    _checkThresholdsAndNotify(config, measurements);
+    notifyListeners();
   }
 
-  Future<void> decodeDateBy0x41And0x42And0x43({
-    required int messageType,
-    required int len,
-    required Uint8List payload,
-    required DeviceConfig deviceConfig,
-    required void Function() callback,
-  }) async {
-    int index = 5;
-    final decode = QingPingCo2TemperatureHumidityDecoder();
-    while(index < len - 2){
-      final dataType = payload[index];
-      final len = decode.combineLittleEndianAndToNum([payload[index+1], payload[index+2]]);
-      switch(dataType) {
-        case 0x85:
-          final datetime = decode.bytesToInt(payload.sublist(index+3,index+7));
-          final sensorType = payload[index+7];
-          switch(sensorType){
-            case 0x01:
-            // ToDO
-              break;
-            case 0x02:
-              final data = decode.decode0x85BySensorData0x02(
-                payload.sublist(index+8,index+3+len),
-                deviceConfig.deviceName,
-                deviceConfig.configId!, // 确保configId不为空
-                datetime,
-              );
-              log("插入新数据 id:${data.configId} datetime: ${data.datetime} temp: ${data.temperature}");
-              final sensorDataOnlyTempDao = SensorDataBasicDao();
-              if(messageType == 0x43){
-                sensorCard[deviceConfig.deviceName]?.add(data);
-                log(sensorCard[deviceConfig.deviceName]?[-1].datetime.toString() ?? "0插入");
-              }else if(messageType == 0x41){
-                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
-                log("收到实时数据");
-              }else{
-                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
-                  sensorCard[deviceConfig.deviceName]?.add(data);
-                  sensorCard[deviceConfig.deviceName]?.add(temp!);
-                }
-                if (deviceConfig.configId != null) {
-                  await sensorDataOnlyTempDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
-                }
-                log("收到历史数据");
-              }
-              break;
-            case 0x03:
-              final data = decode.decode0x85BySensorData0x03(
-                payload.sublist(index+8,index+3+len),
-                deviceConfig.deviceName,
-                deviceConfig.configId!, // 确保configId不为空
-                datetime,
-              );
-              log("插入新数据 id:${data.configId} datetime: ${data.datetime} atmosPressure:${data.atmosPressure} temp: ${data.temperature} humi:${data.humidity}");
-              final sensorDataAtmosPressureDao = SensorDataAtmosPressureDao();
-              if(messageType == 0x43){
-                sensorCard[deviceConfig.deviceName]?.add(data);
-              }else if(messageType == 0x41){
-                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
-              }else{
-                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
-                  sensorCard[deviceConfig.deviceName]?.add(data);
-                  sensorCard[deviceConfig.deviceName]?.add(temp!);
-                }
-                if (deviceConfig.configId != null) {
-                  await sensorDataAtmosPressureDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
-                }
-              }
-              break;
-            case 0x04:
-              final data = decode.decode0x85BySensorData0x04(
-                payload.sublist(index+8,index+3+len),
-                deviceConfig.deviceName,
-                deviceConfig.configId!, // 确保configId不为空
-                datetime,
-              );
-              log("插入新数据 id:${data.configId} datetime: ${data.datetime} co2:${data.co2} temp: ${data.temperature} humi:${data.humidity}");
-              final sensorDataCo2Dao = SensorDataCo2Dao();
-              if(messageType == 0x43){
-                sensorCard[deviceConfig.deviceName]?.add(data);
-                log(sensorCard[deviceConfig.deviceName]?.length.toString() ?? "0");
-              }else if(messageType == 0x41){
-                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
-              }else{
-                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
-                  sensorCard[deviceConfig.deviceName]?.add(data);
-                  sensorCard[deviceConfig.deviceName]?.add(temp!);
-                }
-                if (deviceConfig.configId != null) {
-                  await sensorDataCo2Dao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
-                }
-              }
-              break;
-            case 0x06 || 0x09:
-              final data = decode.decode0x85BySensorData0x06(
-                payload.sublist(index+8,index+3+len),
-                deviceConfig.deviceName,
-                deviceConfig.configId!,
-                datetime,
-                sensorType,
-              );
-              log("插入新数据 id:${data.configId} datetime: ${data.datetime} externalCo2:${data.externalCo2} temp: ${data.temperature} humi: ${data.humidity} externalTemp: ${data.externalTemperature}");
-              final sensorDataExternalCo2OrTempDao = SensorDataExternalCo2OrTempDao();
-              if(messageType == 0x43){
-                sensorCard[deviceConfig.deviceName]?.add(data);
-              }else if(messageType == 0x41){
-                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
-              }else{
-                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
-                  sensorCard[deviceConfig.deviceName]?.add(data);
-                  sensorCard[deviceConfig.deviceName]?.add(temp!);
-                }
-                if (deviceConfig.configId != null) {
-                  await sensorDataExternalCo2OrTempDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
-                }
-              }
-              break;
-            case 0x10:  //青萍室内环境检测仪
-              final data = decode.decode0x85BySensorData0x10(
-                payload.sublist(index+8,index+3+len),
-                deviceConfig.deviceName,
-                deviceConfig.configId!,
-                datetime,
-              );
-              log("插入新数据 id:${data.configId} datetime: ${data.datetime} co2:${data.co2} temp: ${data.temperature} humi:${data.humidity}");
-              final sensorDataCo2Pm25Pm10VocNoiseLuxDao = SensorDataCo2Pm25Pm10VocNoiseLuxDao();
-              if(messageType == 0x43){
-                sensorCard[deviceConfig.deviceName]?.add(data);
-              }else if(messageType == 0x41){
-                sensorCard[deviceConfig.deviceName]?[sensorCard[deviceConfig.deviceName]!.length - 1] = data;
-              }else{
-                if(sensorCard[deviceConfig.deviceName]!.isNotEmpty){
-                  final temp = sensorCard[deviceConfig.deviceName]?.removeLast();
-                  sensorCard[deviceConfig.deviceName]?.add(data);
-                  sensorCard[deviceConfig.deviceName]?.add(temp!);
-                }
-                if (deviceConfig.configId != null) {
-                  await sensorDataCo2Pm25Pm10VocNoiseLuxDao.insert("${deviceConfig.clientId}_${deviceConfig.configId.toString()}",data);
-                }
-              }
-              break;
-          }
-          break;
-        //   -----------------------------------------   //
-        case 0x11:
-          final code = String.fromCharCodes(payload.sublist(index+3,index+3+len));
-          log("固件版本号: $code");
-          break;
-        case 0x1D:  // 断开设备连接
-          log("断开设备连接?: ${payload[index+3] == 0 ? "还有数据未发送完" : "数据已发送完"}");
-          break;
-        case 0x2C:  // USB插入状态
-          final usbState = payload[index+3];
-          log("USB插入状态: ${usbState == 0 ? "拔出" : "插入"}");
-          break;
-        case 0x38:
-          final id = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          log("产品ID: $id");
-          break;
-        case 0x61:
-          if(len == 0){
-            log("PM模组: 未接入");
-          }else{
-            log("PM模组SN: ${payload.sublist(index+3,index+3+len)}");
-          }
-          break;
-        case 0x64:
-          final power = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          log("当前电量： $power %");
-          break;
-        case 0x65:  // 信号强度
-          final voltage = decode.toSignedInt8(decode.bytesToInt(payload.sublist(index+3,index+3+len)));
-          log("信号强度： $voltage dBm");
-          break;
-        case 0x70:  // 系统运行时间
-          final time = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          log("系统运行时间: $time s");
-          break;
-        case 0x71:  // 模组当次搜网时间
-          final time = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          log("模组当次搜网时间: $time ms");
-          break;
-        case 0x74:  // 当前电压
-          final double voltage = decode.bytesToInt(payload.sublist(index+3,index+3+len)) / 1000.0;
-          log("当前电压： $voltage V");
-          break;
-        case 0x81:  // 设备基本信息
-          final d0 = payload[index+3];
-          final d1 = payload[index+4];
-          final screen = ["无屏幕","墨水屏","段码屏","彩屏"];
-          final power = [" AC 220V", "低压供电", "USB-C 供电", "电池"];
-          final wifiType = ["不支持", "2.4G", "5G", "2.4G+5G"];
-          final net = ["无", "NB-IoT", "Cat.1", "unknown", "LoRa"];
-          log("设备基本信息 || 屏幕类型: ${screen[d0 & 3]} 供电类型: ${power[((d0>>3) & 7) - 1]} Wifi类型: ${wifiType[d1 & 3]} 其他网络: ${net[(d1 >> 2) & 7]} RS485: ${(d1 >> 5) & 1 == 0 ? "不支持" : "支持"}");
-          break;
-        case 0x82:  // 当天天气预报温度
-          log("当天天气预报温度:");
-          break;
-        case 0x89:  // M0 mcu 固件版本
-          log("M0 mcu 固件版本: ${String.fromCharCodes(payload.sublist(index+3,index+3+len))}");
-          break;
-        case 0x8A:  // M0 MCU 运行时间
-          final time = decode.bytesToInt(payload.sublist(index+3,index+3+len));
-          log("M0 MCU 运行时间: ${DateTime.fromMillisecondsSinceEpoch(time * 1000)};");
-          break;
-        case 0x8B:  // 本次上网使用的网络
-          final network = payload[index+3];
-          log("本次上网使用的网络: ${network == 1 ? "Wifi" : "cat1 模组"}");
-          break;
-        default:
-          log("未识别命令: ${payload.sublist(index,index+3+len)}");
-      }
-      index += len+3;
-    }
-  }
+  // TODO: 此处由自定义传感器解码器实现填充
+  // 建议后续引入抽象的 PayloadDecoder 接口和解码器注册表模式
 
   /// 时间戳转换
   int getMinutesDifference(int timestampSec) {
@@ -513,12 +312,12 @@ class DeviceVM with ChangeNotifier{
   Future<void> fetchDataFromServer({
     required String broker,
     required int port,
+    required String clientId,
     required String downTopic,
     required String username,
     required String password,
   }) async {
     try{
-      final String clientId = "qingping_down_port";
       final broker1 = getService(broker, port);
       await broker1.connect(
         host: broker,
@@ -549,5 +348,79 @@ class DeviceVM with ChangeNotifier{
       0, // 微秒（Dart 中 DateTime 精度到毫秒，但构造函数保留此参数）
     );
   }
+
+  /// 根据收到的 Measurement 自动推断设备搭载的传感器类型
+  /// 当探测到新的传感器类型组合时，自动更新 DeviceProfile
+  void _autoDetectProfile(DeviceConfig config, List<Measurement> measurements) {
+    final deviceName = config.deviceName;
+    final existingProfile = deviceProfiles[deviceName];
+
+    // 从新数据中提取传感器类型集合
+    final detectedSensors = measurements.map((m) => m.sensorType).toSet();
+
+    if (existingProfile == null) {
+      // 首次收到数据，新建 profile
+      deviceProfiles[deviceName] = DeviceProfile(
+        configId: config.configId!,
+        deviceName: deviceName,
+        sensors: detectedSensors.toList(),
+        payloadVersion: 1,
+      );
+      log('自动检测设备 $deviceName 传感器: $detectedSensors');
+      return;
+    }
+
+    // 检查传感器组合是否发生变化（新增了传感器或移除了传感器）
+    final existingSet = existingProfile.sensors.toSet();
+    if (!_setEquals(existingSet, detectedSensors)) {
+      final newSensors = detectedSensors.difference(existingSet);
+      final removedSensors = existingSet.difference(detectedSensors);
+
+      deviceProfiles[deviceName] = DeviceProfile(
+        configId: config.configId!,
+        deviceName: deviceName,
+        sensors: detectedSensors.toList(),
+        payloadVersion: existingProfile.payloadVersion,
+        thresholds: existingProfile.thresholds,  // 保留已配置的阈值
+      );
+
+      if (newSensors.isNotEmpty) {
+        log('设备 $deviceName 检测到新传感器: $newSensors');
+      }
+      if (removedSensors.isNotEmpty) {
+        log('设备 $deviceName 传感器已移除: $removedSensors（可能暂时离线）');
+      }
+    }
+  }
+
+  /// 比较两个 SensorType 集合是否相同
+  bool _setEquals(Set<SensorType> a, Set<SensorType> b) {
+    return a.length == b.length && a.containsAll(b);
+  }
+
+
+  // 预留函数，后续接入notificationVM
+  /// 检查 Measurement 是否超过阈值，生成通知
+  void _checkThresholdsAndNotify(
+    DeviceConfig config,
+    List<Measurement> measurements,
+  ) {
+    final profile = deviceProfiles[config.deviceName];
+    if (profile == null) return;
+
+    for (final m in measurements) {
+      final threshold = profile.thresholds[m.sensorType];
+      if (threshold == null) continue;
+
+      if (m.value > threshold.maxValue || m.value < threshold.minValue) {
+        log('告警: ${config.deviceName} ${m.sensorType.displayName}=${m.formattedValue}'
+            '${m.sensorType.unit} 超出阈值 [${threshold.minValue}~${threshold.maxValue}]');
+        // TODO: 调用 NotificationMessageDao().insert(...) 写入通知表
+        // TODO: 触发 NotificationVM 刷新
+      }
+    }
+  }
+
+
 
 }
