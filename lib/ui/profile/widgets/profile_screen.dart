@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:sensor_hub/data/services/settings_service.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/core/ui/setting_item.dart';
@@ -59,27 +60,27 @@ class _ProfileScreenState extends State<ProfileScreen>{
                         RouteUtils.pushForNamed(context, RoutePath.unitsConversion);
                       },
                     ),
-                    Consumer<AppVM>(builder: (context,vm,child){
+                    Consumer<SettingsService>(builder: (context,settings,child){
                       return settingItemState(
                         icon: 'assets/icons/icon_device.svg',
                         colorScheme: colorScheme,
                         title: appText.profile_screen_language,
                         showCurrentValue: true,
-                        currentValue: vm.languageName,
+                        currentValue: settings.languageName,
                         onClick: (){
                           RouteUtils.pushForNamed(context, RoutePath.languageSelection);
                         },
                       );
                     }),
-                    Consumer<AppVM>(builder: (context,vm,child){
+                    Consumer<SettingsService>(builder: (context,settings,child){
                       return settingItemState(
                         icon: "assets/icons/icon_device.svg",
                         colorScheme: colorScheme,
                         title: appText.profile_screen_appearance,
                         showBottomLine: false,
                         showCurrentValue: true,
-                        currentValue: vm.themeModelSelectedValue == ThemeMode.light ? appText.profile_screen_light_mode
-                            : vm.themeModelSelectedValue == ThemeMode.dark ? appText.profile_screen_dark_mode
+                        currentValue: settings.themeMode == ThemeMode.light ? appText.profile_screen_light_mode
+                            : settings.themeMode == ThemeMode.dark ? appText.profile_screen_dark_mode
                             : appText.profile_screen_follow_system,
                         onClick: (){
                           RouteUtils.pushForNamed(context, RoutePath.themeSelection);

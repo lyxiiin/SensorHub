@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/ui/core/ui/setting_item.dart';
-import 'package:sensor_hub/ui/main/app_vm.dart';
-
 import '../../../l10n/app_localizations.dart';
 import '../../../route/route_utils.dart';
 import '../../core/ui/custom_app_bar.dart';

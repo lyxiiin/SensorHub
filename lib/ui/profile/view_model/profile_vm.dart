@@ -3,22 +3,29 @@ import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sensor_hub/data/repositories/user_config_repository.dart';
-import '../../main/app_vm.dart';
+import 'package:sensor_hub/data/services/settings_service.dart';
 
 class ProfileVM extends ChangeNotifier {
   ThemeMode? tempSelectedValue;
 
-  List<List<String>> languageList = UserConfigRepository.languageList;
+  List<List<String>> languageList = SettingsService.languageList;
 
   String? _tempLanguageName;
   String get tempLanguageName => _tempLanguageName ?? '';
 
-  // 从 AppVM 获取当前值进行初始化
-  void initFromAppVM(AppVM appVM) {
-    tempSelectedValue = appVM.themeModelSelectedValue;
-    _tempLanguageName = appVM.languageName;
+  // 从 SettingsService 获取当前值进行初始化
+  void initFromSettings(SettingsService settings) {
+    tempSelectedValue = settings.themeMode;
+    _tempLanguageName = settings.languageName;
     notifyListeners();
+  }
+
+  void resetTheme() {
+    tempSelectedValue = null;
+  }
+
+  void resetLanguage() {
+    _tempLanguageName = null;
   }
 
   void changedTempThemeValue(ThemeMode? value) {
@@ -33,31 +40,23 @@ class ProfileVM extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveTheme(AppVM appVM) async {
-    if (tempSelectedValue != null && tempSelectedValue != appVM.themeModelSelectedValue) {
-      appVM.themeModelSelectedValue = tempSelectedValue!;
-      await UserConfigRepository().saveTheme(newTheme: appVM.themeModelSelectedValue);
+  Future<void> saveTheme(SettingsService settings) async {
+    if (tempSelectedValue != null && tempSelectedValue != settings.themeMode) {
+      await settings.setTheme(tempSelectedValue!);
     }
     notifyListeners();
   }
 
-  Future<void> saveLanguage(AppVM appVM) async {
-    if (_tempLanguageName != null && _tempLanguageName != appVM.languageName) {
+  Future<void> saveLanguage(SettingsService settings) async {
+    if (_tempLanguageName != null && _tempLanguageName != settings.languageName) {
       for (var i = 0; i < languageList.length; i++) {
         if (languageList[i][0] == _tempLanguageName) {
-          appVM.languageCode = languageList[i][1];
-          await UserConfigRepository().saveLanguage(newLanguage: appVM.languageCode);
+          await settings.setLanguage(languageList[i][1]);
           break;
         }
+        log("当前语言: ${settings.languageCode}");
       }
-      
-      if (appVM.languageCode == 'auto') {
-        appVM.setAutoLanguage();
-      } else {
-        appVM.setCurrentLanguage(appVM.languageCode);
-      }
-      log("当前语言: ${appVM.languageCode}");
+      notifyListeners();
     }
-    notifyListeners();
   }
 }

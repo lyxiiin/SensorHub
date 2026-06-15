@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:sensor_hub/data/services/settings_service.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/ui/profile/view_model/profile_vm.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../core/ui/custom_app_bar.dart';
-import '../../main/app_vm.dart';
 
 class ThemeSelectionPage extends StatefulWidget{
   const ThemeSelectionPage({super.key});
@@ -17,6 +17,14 @@ class ThemeSelectionPage extends StatefulWidget{
 }
 
 class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileVM = Provider.of<ProfileVM>(context, listen: false);
+      profileVM.resetTheme();
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -33,9 +41,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
           },
           colorScheme: colorScheme,
           onFinish: () {
-            final appVM = Provider.of<AppVM>(context, listen: false);
+            final settings = Provider.of<SettingsService>(context, listen: false);
             final profileVM = Provider.of<ProfileVM>(context, listen: false);
-            profileVM.saveTheme(appVM);
+            profileVM.saveTheme(settings);
             RouteUtils.pop(context);
           }
       ),
@@ -52,95 +60,38 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
         ),
     );
   }
-  Widget _themeModelCardItem({
-    required ColorScheme colorScheme,
-    required ThemeMode value,
-    required String title
-  }){
-    return Container(
-      height: 180.h,
-      width: 90.w,
-      color: colorScheme.surface,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 54.w,
-                height: 96.h,
-                decoration: value == ThemeMode.system ? BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFFE8E8E8),
-                      Color(0xCC000000)
-                    ]
-                  ),
-                  borderRadius: BorderRadius.circular(4.r),
-                ) :BoxDecoration(
-                  color: value == ThemeMode.dark ? Color(0xCC000000) : Color(0xFFE8E8E8),
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-              ),
-              Positioned(
-                top: 18.h,
-                left: 2.w,
-                right: 2.w,
-                child: Container(
-                  width: double.infinity,
-                  height: 28.h,
-                  decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(4.r)
-                  ),
-                ),
-              )
-            ],
-          ),
-          Text(
-            title,
-            style: TextStyle(
-                color: value == themeModelSelectedValue ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                fontSize: 14.sp,
-                fontWeight: value == themeModelSelectedValue ? FontWeight.bold : FontWeight.normal
-            ),
-          )
-        ],
-      ),
-    );
-  }
 
   Widget _themeModelGroupCart({
     required ColorScheme colorScheme,
     required AppLocalizations appText,
   }){
-    final List<List<String>> themeModelList = [
-      [appText.profile_screen_light_mode,"Icons.wb_sunny_outlined",ThemeMode.light.toString()],
-      [appText.profile_screen_dark_mode,"Icons.wb_moon_outlined",ThemeMode.dark.toString()],
-      [appText.profile_screen_follow_system,"Icons.contrast_outlined",ThemeMode.system.toString()],
+    final List<ThemeMode> themeModes = [
+      ThemeMode.light,
+      ThemeMode.dark,
+      ThemeMode.system,
     ];
-    return Consumer2<ProfileVM, AppVM>(builder: (context, profileVM, appVM, child){
+    final List<String> themeLabels = [
+      appText.profile_screen_light_mode,
+      appText.profile_screen_dark_mode,
+      appText.profile_screen_follow_system,
+    ];
+    return Consumer2<ProfileVM, SettingsService>(builder: (context, profileVM, settings, child){
       // 初始化临时值
       if (profileVM.tempSelectedValue == null) {
-        profileVM.initFromAppVM(appVM);
+        profileVM.initFromSettings(settings);
       }
       
-      themeModelSelectedValue = profileVM.tempSelectedValue ?? appVM.themeModelSelectedValue;
+      themeModelSelectedValue = profileVM.tempSelectedValue ?? settings.themeMode;
       return Column(
-        children: List.generate(
-            themeModelList.length, (index) {
-          ThemeMode value = ThemeMode.values[index];
+        children: List.generate(themeModes.length, (index) {
           return RadioListTile<ThemeMode>(
             title: Text(
-              themeModelList[index][0],
+              themeLabels[index],
               style: TextStyle(
                 fontSize: 16.sp,
               ),
             ),
-            value: value,
+            value: themeModes[index],
             groupValue: themeModelSelectedValue,
             onChanged: (ThemeMode? value) {
               profileVM.changedTempThemeValue(value);
