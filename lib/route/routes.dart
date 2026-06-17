@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/units_conversion_page.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 import '../ui/main/widgets/app_navigation_page.dart';
 import '../ui/profile/widgets/language_selection_page.dart';
@@ -20,6 +21,7 @@ class Routes{
       case RoutePath.deviceRegistrationFrom:
         return pageRoute(DeviceRegistrationFormPage());
     }
+    logW('未知路由: ${setting.name}', tag: 'Router');
     return pageRoute(
         Scaffold(
           body: SafeArea(

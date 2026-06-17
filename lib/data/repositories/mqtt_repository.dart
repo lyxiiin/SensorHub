@@ -1,5 +1,6 @@
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/services/sqlite_service.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 import '../models/device_config.dart';
 
 class MqttRepository {
@@ -27,8 +28,10 @@ class MqttRepository {
     await _configDao!.insert(config);
     final DeviceConfig? newConfig = await _configDao!.getByClientId(config.clientId);
     if(newConfig != null){
+      logI('插入设备成功: ${config.deviceName} (configId=${newConfig.configId})', tag: 'Repo');
       return newConfig.configId!;
     }
+    logE('插入设备后未找到记录: ${config.deviceName}', tag: 'Repo');
     return -1;
   }
 
@@ -40,12 +43,14 @@ class MqttRepository {
     }
     if(configId != null){
       await _configDao!.delete(configId);
+      logI('删除设备: clientId=$clientId, configId=$configId', tag: 'Repo');
     }
   }
 
   //读取所有设备
   Future<List<DeviceConfig>> getLocalSavedDevices() async {
     final devices = await _configDao!.getAll();
+    logD('读取本地设备列表: ${devices.length} 个', tag: 'Repo');
     return devices;
   }
 

@@ -1,8 +1,7 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensor_hub/data/services/settings_service.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 import 'ui/main/widgets/app.dart';
 import 'data/services/shared_preferences_service.dart';
 
@@ -22,10 +21,11 @@ Future<void> main() async {
       statusBarIconBrightness: Brightness.dark,
     ));
 
+    logI('应用启动');
     runApp(MyApp(settingsService: settings));
   } catch (e) {
     // 即使初始化失败，也运行应用，但可以跳转到一个错误提示页面
-    log('SharedPreferences 初始化失败: $e');
+    logE('应用初始化失败: $e', error: e);
     runApp(const MaterialApp(home: Scaffold(body: Center(child: Text('初始化失败...')))));
   }
 }

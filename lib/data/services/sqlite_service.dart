@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 class SqliteService {
   static final SqliteService _instance = SqliteService._internal();
@@ -18,6 +19,7 @@ class SqliteService {
     // 获取应用文档目录（安全、可写）
     final directory = await getApplicationDocumentsDirectory();
     final dbPath = join(directory.path, 'sensor_hub_database.db');
+    logI('数据库初始化: $dbPath', tag: 'DB');
     return await openDatabase(
       dbPath,
       version: 2,
@@ -26,6 +28,7 @@ class SqliteService {
     );
   }
   Future<void> _onCreate(Database db, int version) async {
+    logI('创建数据库表 (v$version)', tag: 'DB');
     await db.execute('''
       CREATE TABLE device_configs (
         configId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,6 +83,7 @@ class SqliteService {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    logI('数据库升级: v$oldVersion -> v$newVersion', tag: 'DB');
     // 示例：如果未来要加新表或字段，可在此处理
     if (oldVersion < 2) {
       await db.execute('''

@@ -1,3 +1,4 @@
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -260,7 +261,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
           ),
         );
       } else {
-        return ListView.builder(
+        return RefreshIndicator(
+        onRefresh: () async {
+          await viewModel.refreshData();
+        },
+        child: ListView.builder(
           itemCount: vm.latestReadings.length,
           itemBuilder: (context, index) {
             final entry = vm.latestReadings.entries.elementAt(index);
@@ -285,13 +290,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 name: deviceName,
                 time: latestTimestamp > 0
                     ? vm.getMinutesDifference(latestTimestamp).toString()
-                    : "—",
+                    : "0",
                 dateList: readings,
                 onTap: () {},
               ),
             );
           },
-        );
+          ));
       }
     });
   }

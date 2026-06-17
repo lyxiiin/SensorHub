@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+import 'package:sensor_hub/utils/app_logger.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:typed_data';
@@ -34,6 +34,16 @@ class MqttService {
     _autoReconnect = autoReconnect;
     _reconnectDelay = reconnectDelay;
 
+    // 如果已经连接或正在连接中，直接复用
+    if (isConnected) {
+      logD('复用现有连接', tag: 'MQTT');
+      return;
+    }
+    if (_isConnecting) {
+      logD('正在连接中，等待完成', tag: 'MQTT');
+      return;
+    }
+
     _client = MqttServerClient(host, clientId ?? 'flutter_client_${DateTime.now().millisecondsSinceEpoch}');
     _client.port = port;
     _client.setProtocolV311();
@@ -56,20 +66,32 @@ class MqttService {
     await _doConnect();
   }
 
+  bool _isConnecting = false;
+
   Future<void> _doConnect() async {
+    // 防止重复连接：已连接或正在连接中时跳过
+    if (isConnected) {
+      return;
+    }
+    if (_isConnecting) {
+      return;
+    }
+    _isConnecting = true;
     try {
       await _client.connect();
     } catch (e) {
-      log('MQTT 连接失败: $e');
+      logE('连接失败: $e', error: e, tag: 'MQTT');
       _onDisconnected();
       if (_autoReconnect) {
         _scheduleReconnect();
       }
+    } finally {
+      _isConnecting = false;
     }
   }
 
   void _onConnected() {
-    log('MQTT 已连接');
+    logI('已连接', tag: 'MQTT');
     _connectionStatusController?.add(true);
     _listenToMessages();
     // 断线重连后需要重新订阅已记录的 topic
@@ -79,7 +101,7 @@ class MqttService {
   }
 
   void _onDisconnected() {
-    log('MQTT 已断开');
+    logW('连接已断开', tag: 'MQTT');
     _connectionStatusController?.add(false);
     if (_autoReconnect) {
       _scheduleReconnect();
@@ -89,35 +111,32 @@ class MqttService {
   void _scheduleReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(milliseconds: _reconnectDelay), () {
-      log('尝试 MQTT 重连...');
+      logI('尝试重连...', tag: 'MQTT');
       _doConnect();
     });
   }
 
   void _listenToMessages() {
-    log('[诊断] _listenToMessages() 被调用，即将设置流监听器');
+    logD('设置流监听器', tag: 'MQTT');
     // 取消现有的监听器（如果有的话）
     _streamSubscription?.cancel();
-    
+        
     _streamSubscription = _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
-      log('[诊断] _client.updates 流收到 ${messages.length} 条消息');
       final message = messages[0];
       final topic = message.topic;
-      log('[诊断] 消息 topic=$topic, payload类型=${message.payload.runtimeType}');
       final publishMsg = message.payload as MqttPublishMessage;
       final payload = publishMsg.payload.message;
-
+    
       // 查找是否有注册的回调
       final callback = _topicCallbacks[topic];
       if (callback != null) {
-        log('[诊断] 找到回调，即将调用 callback($topic, ...)');
         callback(topic, payload);
       } else {
         // 兜底：未注册回调也打印（可选）
-        log('收到未注册 topic 消息: $topic -> $payload');
+        logW('未注册回调的 topic: $topic', tag: 'MQTT');
       }
     }, onError: (error) {
-      log('MQTT 消息监听错误: $error');
+      logE('消息监听错误: $error', error: error, tag: 'MQTT');
     });
   }
 
@@ -128,7 +147,7 @@ class MqttService {
     bool retain = false,
   }) async {
     if(!isConnected){
-      log("'MQTT 未连接，无法发布消息到 $topic'");
+      logW('未连接，无法发布到 $topic', tag: 'MQTT');
       return;
     }
     final builder = MqttClientPayloadBuilder();
@@ -140,21 +159,21 @@ class MqttService {
         builder.addByte(byte);
       }
     }else{
-      log('MQTT 发布失败：不支持的 payload 类型 ${payload.runtimeType}');
+      logE('不支持的 payload 类型 ${payload.runtimeType}', tag: 'MQTT');
       return;
     }
     try{
       _client.publishMessage(topic, qos, builder.payload!, retain: retain);
-      log("已发布消息到 $topic");
+      logD('已发布到 $topic', tag: 'MQTT');
     } catch(e){
-      log('MQTT 发布失败: $e');
+      logE('发布失败: $e', error: e, tag: 'MQTT');
     }
   }
 
   // 订阅 topic 并注册回调
   void subscribe(String topic, MqttMessageCallback callback) {
     if (_client.connectionStatus?.state != MqttConnectionState.connected) {
-      log('MQTT 未连接，无法订阅 $topic');
+      logW('未连接，无法订阅 $topic', tag: 'MQTT');
       return;
     }
 
@@ -168,9 +187,9 @@ class MqttService {
       _client.subscribe(topic, MqttQos.atLeastOnce);
       _subscribedTopics.add(topic);
       _topicCallbacks[topic] = callback;
-      log('成功订阅: $topic');
+      logI('已订阅: $topic', tag: 'MQTT');
     } catch (e) {
-      log('订阅失败 $topic: $e');
+      logE('订阅失败 $topic: $e', error: e, tag: 'MQTT');
     }
   }
 
@@ -189,7 +208,7 @@ class MqttService {
 
     _subscribedTopics.remove(topic);
     _topicCallbacks.remove(topic);
-    log('已退订: $topic');
+    logI('已退订: $topic', tag: 'MQTT');
   }
 
   // 断开连接（停止自动重连）
@@ -204,10 +223,15 @@ class MqttService {
     // 取消消息监听器
     _streamSubscription?.cancel();
     _streamSubscription = null;
-    log('MQTT 已手动断开');
+    logI('已手动断开', tag: 'MQTT');
   }
 
   // 获取当前连接状态
-  bool get isConnected =>
-      _client.connectionStatus?.state == MqttConnectionState.connected;
+  bool get isConnected {
+    try {
+      return _client.connectionStatus?.state == MqttConnectionState.connected;
+    } catch (_) {
+      return false; // _client 尚未初始化
+    }
+  }
 }

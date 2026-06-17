@@ -1,6 +1,5 @@
-import 'dart:developer';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 import '../exceptions/shared_preferences_exception.dart';
 
 class SPUtil {
@@ -36,7 +35,7 @@ class SPUtil {
   // 静态初始化方法
   static Future<void> init() async {
     await getInstance();
-    log("首选项初始化：OK");
+    logI('SharedPreferences 初始化完成', tag: 'SP');
   }
 
   // 状态检查

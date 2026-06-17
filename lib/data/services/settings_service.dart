@@ -1,6 +1,6 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/data/services/shared_preferences_service.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 class SettingsService extends ChangeNotifier{
 
@@ -28,7 +28,7 @@ class SettingsService extends ChangeNotifier{
     await SPUtil().setString("theme", "light");
     await SPUtil().setString("language", languageList[1][1]);
     await SPUtil().setBool('is_first_run', false);
-    log("首选项设置：OK");
+    logI('首次运行，已写入默认配置', tag: 'Settings');
   }
   void load() {
     try{
@@ -49,9 +49,9 @@ class SettingsService extends ChangeNotifier{
       _applyLocale(languageCode);
 
 
-      log('SettingsService 加载完成: theme=$themeMode, lang=$languageCode');
+      logI('加载完成: theme=$themeMode, lang=$languageCode', tag: 'Settings');
     } catch (e){
-      log("读取错误$e");
+      logE('加载配置失败: $e', error: e, tag: 'Settings');
     }
   }
   bool checkFirstRun() {

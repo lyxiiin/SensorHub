@@ -1,7 +1,7 @@
-import 'dart:developer';
 import 'dart:typed_data';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 /// SDTP — 传感器数据传输协议解码器
 ///
@@ -36,15 +36,15 @@ abstract class PayloadDecoder {
     // 步骤1: 十六进制字符串 → 字节数组
     final bytes = _hexToBytes(hexPayload);
     if (bytes.length < 9) {
-      log('SDTP: 帧长度不足 (${bytes.length} < 9)');
+      logW('帧长度不足 (${bytes.length} < 9)', tag: 'SDTP');
       return [];
     }
 
     // 步骤2: 验证同步头
     if (bytes[0] != 0xAA || bytes[1] != 0x55) {
-      log('SDTP: 同步头校验失败 (期望 AA55, 实际 '
+      logW('同步头校验失败 (期望 AA55, 实际 '
           '${bytes[0].toRadixString(16).padLeft(2, '0').toUpperCase()}'
-          '${bytes[1].toRadixString(16).padLeft(2, '0').toUpperCase()})');
+          '${bytes[1].toRadixString(16).padLeft(2, '0').toUpperCase()})', tag: 'SDTP');
       return [];
     }
 
@@ -63,9 +63,9 @@ abstract class PayloadDecoder {
     final expectedCrc = bytes[bytes.length - 1];
     final actualCrc = _crc8(bytes, 2, bytes.length - 1);
     if (expectedCrc != actualCrc) {
-      log('SDTP: CRC8 校验失败 (期望 '
+      logW('CRC8 校验失败 (期望 '
           '${expectedCrc.toRadixString(16).padLeft(2, '0')}, '
-          '实际 ${actualCrc.toRadixString(16).padLeft(2, '0')})');
+          '实际 ${actualCrc.toRadixString(16).padLeft(2, '0')})', tag: 'SDTP');
       return [];
     }
 
@@ -81,14 +81,14 @@ abstract class PayloadDecoder {
       offset += 2;
 
       if (offset + valueLen > bytes.length - 1) {
-        log('SDTP: TLV 记录 $i Value 越界 (offset=$offset, len=$valueLen, '
-            'available=${bytes.length - 1 - offset})');
+        logW('TLV 记录 $i Value 越界 (offset=$offset, len=$valueLen, '
+            'available=${bytes.length - 1 - offset})', tag: 'SDTP');
         break;
       }
 
       final sensorType = _typeIdToSensorType[typeId];
       if (sensorType == null) {
-        log('SDTP: 未知传感器类型 ID=0x${typeId.toRadixString(16)} (length=$valueLen)，跳过');
+        logD('未知传感器类型 ID=0x${typeId.toRadixString(16)} (length=$valueLen)，跳过', tag: 'SDTP');
         offset += valueLen;
         continue;
       }
@@ -103,7 +103,7 @@ abstract class PayloadDecoder {
         final double floatValue = _parseFloat32(bytes, offset);
         storedValue = (floatValue * sensorType.storageScale).round();
       } else {
-        log('SDTP: 不支持的 Value 长度 $valueLen (typeId=0x${typeId.toRadixString(16)})，跳过');
+        logW('不支持的 Value 长度 $valueLen (typeId=0x${typeId.toRadixString(16)})，跳过', tag: 'SDTP');
         offset += valueLen;
         continue;
       }

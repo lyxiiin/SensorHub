@@ -1,9 +1,8 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/services/settings_service.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 class ProfileVM extends ChangeNotifier {
   ThemeMode? tempSelectedValue;
@@ -54,8 +53,8 @@ class ProfileVM extends ChangeNotifier {
           await settings.setLanguage(languageList[i][1]);
           break;
         }
-        log("当前语言: ${settings.languageCode}");
       }
+      logD('语言已切换为: ${settings.languageCode}', tag: 'Profile');
       notifyListeners();
     }
   }

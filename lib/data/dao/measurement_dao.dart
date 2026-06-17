@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/data/services/sqlite_service.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 class MeasurementDao {
   static final MeasurementDao _instance = MeasurementDao._internal();
@@ -25,7 +26,13 @@ class MeasurementDao {
       batch.rawInsert('''INSERT OR REPLACE INTO device_latest (config_id, sensor_type, timestamp, value) VALUES (?, ?, ?, ?)''',
         [m.configId, m.sensorType.name, m.timestamp, m.value]);
     }
-    await batch.commit(noResult: true);
+    try {
+      await batch.commit(noResult: true);
+      logD('批量写入 ${measurements.length} 条测量数据', tag: 'DAO');
+    } catch (e) {
+      logE('批量写入测量数据失败: $e', error: e, tag: 'DAO');
+      rethrow;
+    }
   }
 
   // 查询指定设备的历史数据
