@@ -22,7 +22,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final profileVM = Provider.of<ProfileVM>(context, listen: false);
+      final settings = context.read<SettingsService>();
       profileVM.resetTheme();
+      profileVM.initFromSettings(settings);
     });
   }
   @override
@@ -76,12 +78,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
       appText.profile_screen_follow_system,
     ];
     return Consumer2<ProfileVM, SettingsService>(builder: (context, profileVM, settings, child){
-      // 初始化临时值
-      if (profileVM.tempSelectedValue == null) {
-        profileVM.initFromSettings(settings);
-      }
-      
-      themeModelSelectedValue = profileVM.tempSelectedValue ?? settings.themeMode;
+      final themeModelSelectedValue = profileVM.tempSelectedValue ?? settings.themeMode;
       return Column(
         children: List.generate(themeModes.length, (index) {
           return RadioListTile<ThemeMode>(
@@ -101,6 +98,5 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
       );
     });
   }
-  late ThemeMode themeModelSelectedValue;
 }
 

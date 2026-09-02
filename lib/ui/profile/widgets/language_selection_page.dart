@@ -25,7 +25,9 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>{
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final profileVM = Provider.of<ProfileVM>(context, listen: false);
+      final settings = context.read<SettingsService>();
       profileVM.resetLanguage();
+      profileVM.initFromSettings(settings);
     });
   }
   @override
@@ -53,11 +55,6 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>{
       ),
       body: SafeArea(
         child: Consumer2<ProfileVM, SettingsService>(builder: (context, profileVM, settings, child){
-          // 初始化临时值
-          if (profileVM.tempLanguageName.isEmpty) {
-            profileVM.initFromSettings(settings);
-          }
-          
           return ListView.builder(
             itemCount: profileVM.languageList.length,
             itemBuilder: (context,index){

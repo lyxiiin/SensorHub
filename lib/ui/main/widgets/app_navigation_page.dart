@@ -42,9 +42,11 @@ class _AppNavigationPageState extends State<AppNavigationPage >{
     final appText = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    tabLabels.add(appText.tab_device);
-    tabLabels.add(appText.tab_notifications);
-    tabLabels.add(appText.tab_profile);
+    tabLabels
+      ..clear()
+      ..add(appText.tab_device)
+      ..add(appText.tab_notifications)
+      ..add(appText.tab_profile);
 
 
     return Scaffold(
