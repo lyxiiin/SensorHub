@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/services/settings_service.dart';
+import 'package:sensor_hub/data/services/sync_service.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/core/themes/app_theme.dart';
@@ -23,16 +24,36 @@ class MyApp extends StatefulWidget{
   }
 
 }
-class _MyAppState extends State<MyApp>{
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  late final SyncService _syncService;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _syncService = SyncService();
+    _syncService.start(interval: const Duration(minutes: 5));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncService.syncOnce();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _syncService.stop();
+    super.dispose();
   }
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: widget.settingsService),
+        Provider<SyncService>.value(value: _syncService),
         ChangeNotifierProvider(create: (context) => DeviceVM()),
         ChangeNotifierProvider(create: (context) => ProfileVM()),
       ],

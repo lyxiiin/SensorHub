@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sensor_hub/data/services/http/api_config.dart';
+import 'package:sensor_hub/data/services/http/api_service.dart';
 import 'package:sensor_hub/data/services/settings_service.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 import 'ui/main/widgets/app.dart';
@@ -21,6 +23,8 @@ Future<void> main() async {
       statusBarIconBrightness: Brightness.dark,
     ));
 
+    // 初始化服务
+    ApiService(config: ApiConfig.development);
     logI('应用启动');
     runApp(MyApp(settingsService: settings));
   } catch (e) {
