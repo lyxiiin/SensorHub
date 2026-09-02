@@ -24,5 +24,28 @@
   "profile_screen_follow_system": "System",
 
   "common_ui_cancel": "Cancel",
-  "common_ui_finish": "Finish"
+  "common_ui_finish": "Finish",
+
+  "common_ui_coming_soon": "Coming Soon",
+  "common_ui_loading": "Loading…",
+
+  "device_detail_edit": "Edit",
+  "device_detail_delete": "Delete",
+  "device_detail_deleted": "Device deleted",
+  "device_detail_sensor_data": "Real-time Data",
+  "device_detail_history": "History Trend",
+  "device_detail_online": "Online",
+  "device_detail_offline": "Offline",
+  "device_detail_mac": "MAC Address",
+  "device_detail_last_update": "Last Update",
+  "device_detail_no_data": "No Data",
+  "device_detail_no_data_hint": "No sensor data yet. Pull down to refresh",
+  "device_detail_unknown_device": "Unknown Device",
+  "device_detail_delete_title": "Delete Device",
+  "device_detail_delete_message": "Delete this device? This action cannot be undone.",
+  "device_detail_confirm": "Confirm",
+  "device_detail_chart_current": "Current",
+  "device_detail_chart_max": "Max",
+  "device_detail_chart_min": "Min",
+  "device_detail_chart_avg": "Avg"
 }

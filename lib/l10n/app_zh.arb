@@ -26,5 +26,28 @@
 
 
   "common_ui_cancel": "取消",
-  "common_ui_finish": "完成"
+  "common_ui_finish": "完成",
+
+  "common_ui_coming_soon": "功能开发中",
+  "common_ui_loading": "加载中…",
+
+  "device_detail_edit": "编辑",
+  "device_detail_delete": "删除",
+  "device_detail_deleted": "设备已删除",
+  "device_detail_sensor_data": "实时数据",
+  "device_detail_history": "历史趋势",
+  "device_detail_online": "在线",
+  "device_detail_offline": "离线",
+  "device_detail_mac": "MAC 地址",
+  "device_detail_last_update": "最近更新",
+  "device_detail_no_data": "暂无数据",
+  "device_detail_no_data_hint": "暂无传感器数据，请下拉刷新",
+  "device_detail_unknown_device": "未知设备",
+  "device_detail_delete_title": "删除设备",
+  "device_detail_delete_message": "确定要删除该设备吗？此操作不可撤销。",
+  "device_detail_confirm": "确定",
+  "device_detail_chart_current": "当前",
+  "device_detail_chart_max": "最高",
+  "device_detail_chart_min": "最低",
+  "device_detail_chart_avg": "平均"
 }

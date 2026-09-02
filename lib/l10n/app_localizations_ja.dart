@@ -73,4 +73,67 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get common_ui_finish => '完了';
+
+  @override
+  String get common_ui_coming_soon => '開発中';
+
+  @override
+  String get common_ui_loading => '読み込み中…';
+
+  @override
+  String get device_detail_edit => '編集';
+
+  @override
+  String get device_detail_delete => '削除';
+
+  @override
+  String get device_detail_deleted => 'デバイスを削除しました';
+
+  @override
+  String get device_detail_sensor_data => 'リアルタイムデータ';
+
+  @override
+  String get device_detail_history => '履歴トレンド';
+
+  @override
+  String get device_detail_online => 'オンライン';
+
+  @override
+  String get device_detail_offline => 'オフライン';
+
+  @override
+  String get device_detail_mac => 'MACアドレス';
+
+  @override
+  String get device_detail_last_update => '最終更新';
+
+  @override
+  String get device_detail_no_data => 'データなし';
+
+  @override
+  String get device_detail_no_data_hint => 'センサーデータがありません。下に引いて更新してください';
+
+  @override
+  String get device_detail_unknown_device => '不明なデバイス';
+
+  @override
+  String get device_detail_delete_title => 'デバイスを削除';
+
+  @override
+  String get device_detail_delete_message => 'このデバイスを削除しますか？この操作は元に戻せません。';
+
+  @override
+  String get device_detail_confirm => '確認';
+
+  @override
+  String get device_detail_chart_current => '現在値';
+
+  @override
+  String get device_detail_chart_max => '最大';
+
+  @override
+  String get device_detail_chart_min => '最小';
+
+  @override
+  String get device_detail_chart_avg => '平均';
 }

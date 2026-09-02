@@ -73,4 +73,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get common_ui_finish => 'Finish';
+
+  @override
+  String get common_ui_coming_soon => 'Coming Soon';
+
+  @override
+  String get common_ui_loading => 'Loading…';
+
+  @override
+  String get device_detail_edit => 'Edit';
+
+  @override
+  String get device_detail_delete => 'Delete';
+
+  @override
+  String get device_detail_deleted => 'Device deleted';
+
+  @override
+  String get device_detail_sensor_data => 'Real-time Data';
+
+  @override
+  String get device_detail_history => 'History Trend';
+
+  @override
+  String get device_detail_online => 'Online';
+
+  @override
+  String get device_detail_offline => 'Offline';
+
+  @override
+  String get device_detail_mac => 'MAC Address';
+
+  @override
+  String get device_detail_last_update => 'Last Update';
+
+  @override
+  String get device_detail_no_data => 'No Data';
+
+  @override
+  String get device_detail_no_data_hint =>
+      'No sensor data yet. Pull down to refresh';
+
+  @override
+  String get device_detail_unknown_device => 'Unknown Device';
+
+  @override
+  String get device_detail_delete_title => 'Delete Device';
+
+  @override
+  String get device_detail_delete_message =>
+      'Delete this device? This action cannot be undone.';
+
+  @override
+  String get device_detail_confirm => 'Confirm';
+
+  @override
+  String get device_detail_chart_current => 'Current';
+
+  @override
+  String get device_detail_chart_max => 'Max';
+
+  @override
+  String get device_detail_chart_min => 'Min';
+
+  @override
+  String get device_detail_chart_avg => 'Avg';
 }

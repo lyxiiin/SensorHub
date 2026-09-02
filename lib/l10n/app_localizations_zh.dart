@@ -73,6 +73,69 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get common_ui_finish => '完成';
+
+  @override
+  String get common_ui_coming_soon => '功能开发中';
+
+  @override
+  String get common_ui_loading => '加载中…';
+
+  @override
+  String get device_detail_edit => '编辑';
+
+  @override
+  String get device_detail_delete => '删除';
+
+  @override
+  String get device_detail_deleted => '设备已删除';
+
+  @override
+  String get device_detail_sensor_data => '实时数据';
+
+  @override
+  String get device_detail_history => '历史趋势';
+
+  @override
+  String get device_detail_online => '在线';
+
+  @override
+  String get device_detail_offline => '离线';
+
+  @override
+  String get device_detail_mac => 'MAC 地址';
+
+  @override
+  String get device_detail_last_update => '最近更新';
+
+  @override
+  String get device_detail_no_data => '暂无数据';
+
+  @override
+  String get device_detail_no_data_hint => '暂无传感器数据，请下拉刷新';
+
+  @override
+  String get device_detail_unknown_device => '未知设备';
+
+  @override
+  String get device_detail_delete_title => '删除设备';
+
+  @override
+  String get device_detail_delete_message => '确定要删除该设备吗？此操作不可撤销。';
+
+  @override
+  String get device_detail_confirm => '确定';
+
+  @override
+  String get device_detail_chart_current => '当前';
+
+  @override
+  String get device_detail_chart_max => '最高';
+
+  @override
+  String get device_detail_chart_min => '最低';
+
+  @override
+  String get device_detail_chart_avg => '平均';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -144,4 +207,67 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get common_ui_finish => '完成';
+
+  @override
+  String get common_ui_coming_soon => '功能開發中';
+
+  @override
+  String get common_ui_loading => '載入中…';
+
+  @override
+  String get device_detail_edit => '編輯';
+
+  @override
+  String get device_detail_delete => '刪除';
+
+  @override
+  String get device_detail_deleted => '裝置已刪除';
+
+  @override
+  String get device_detail_sensor_data => '即時數據';
+
+  @override
+  String get device_detail_history => '歷史趨勢';
+
+  @override
+  String get device_detail_online => '在線';
+
+  @override
+  String get device_detail_offline => '離線';
+
+  @override
+  String get device_detail_mac => 'MAC 位址';
+
+  @override
+  String get device_detail_last_update => '最近更新';
+
+  @override
+  String get device_detail_no_data => '暫無數據';
+
+  @override
+  String get device_detail_no_data_hint => '暫無感測器數據，請下拉刷新';
+
+  @override
+  String get device_detail_unknown_device => '未知裝置';
+
+  @override
+  String get device_detail_delete_title => '刪除裝置';
+
+  @override
+  String get device_detail_delete_message => '確定要刪除該裝置嗎？此操作無法復原。';
+
+  @override
+  String get device_detail_confirm => '確定';
+
+  @override
+  String get device_detail_chart_current => '當前';
+
+  @override
+  String get device_detail_chart_max => '最高';
+
+  @override
+  String get device_detail_chart_min => '最低';
+
+  @override
+  String get device_detail_chart_avg => '平均';
 }

@@ -25,5 +25,28 @@
   "profile_screen_follow_system": "自動",
 
   "common_ui_cancel": "キャンセル",
-  "common_ui_finish": "完了"
+  "common_ui_finish": "完了",
+
+  "common_ui_coming_soon": "開発中",
+  "common_ui_loading": "読み込み中…",
+
+  "device_detail_edit": "編集",
+  "device_detail_delete": "削除",
+  "device_detail_deleted": "デバイスを削除しました",
+  "device_detail_sensor_data": "リアルタイムデータ",
+  "device_detail_history": "履歴トレンド",
+  "device_detail_online": "オンライン",
+  "device_detail_offline": "オフライン",
+  "device_detail_mac": "MACアドレス",
+  "device_detail_last_update": "最終更新",
+  "device_detail_no_data": "データなし",
+  "device_detail_no_data_hint": "センサーデータがありません。下に引いて更新してください",
+  "device_detail_unknown_device": "不明なデバイス",
+  "device_detail_delete_title": "デバイスを削除",
+  "device_detail_delete_message": "このデバイスを削除しますか？この操作は元に戻せません。",
+  "device_detail_confirm": "確認",
+  "device_detail_chart_current": "現在値",
+  "device_detail_chart_max": "最大",
+  "device_detail_chart_min": "最小",
+  "device_detail_chart_avg": "平均"
 }

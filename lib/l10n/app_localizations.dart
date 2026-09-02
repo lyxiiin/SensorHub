@@ -232,6 +232,132 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'完成'**
   String get common_ui_finish;
+
+  /// No description provided for @common_ui_coming_soon.
+  ///
+  /// In zh, this message translates to:
+  /// **'功能开发中'**
+  String get common_ui_coming_soon;
+
+  /// No description provided for @common_ui_loading.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载中…'**
+  String get common_ui_loading;
+
+  /// No description provided for @device_detail_edit.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑'**
+  String get device_detail_edit;
+
+  /// No description provided for @device_detail_delete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get device_detail_delete;
+
+  /// No description provided for @device_detail_deleted.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备已删除'**
+  String get device_detail_deleted;
+
+  /// No description provided for @device_detail_sensor_data.
+  ///
+  /// In zh, this message translates to:
+  /// **'实时数据'**
+  String get device_detail_sensor_data;
+
+  /// No description provided for @device_detail_history.
+  ///
+  /// In zh, this message translates to:
+  /// **'历史趋势'**
+  String get device_detail_history;
+
+  /// No description provided for @device_detail_online.
+  ///
+  /// In zh, this message translates to:
+  /// **'在线'**
+  String get device_detail_online;
+
+  /// No description provided for @device_detail_offline.
+  ///
+  /// In zh, this message translates to:
+  /// **'离线'**
+  String get device_detail_offline;
+
+  /// No description provided for @device_detail_mac.
+  ///
+  /// In zh, this message translates to:
+  /// **'MAC 地址'**
+  String get device_detail_mac;
+
+  /// No description provided for @device_detail_last_update.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近更新'**
+  String get device_detail_last_update;
+
+  /// No description provided for @device_detail_no_data.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无数据'**
+  String get device_detail_no_data;
+
+  /// No description provided for @device_detail_no_data_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无传感器数据，请下拉刷新'**
+  String get device_detail_no_data_hint;
+
+  /// No description provided for @device_detail_unknown_device.
+  ///
+  /// In zh, this message translates to:
+  /// **'未知设备'**
+  String get device_detail_unknown_device;
+
+  /// No description provided for @device_detail_delete_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除设备'**
+  String get device_detail_delete_title;
+
+  /// No description provided for @device_detail_delete_message.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除该设备吗？此操作不可撤销。'**
+  String get device_detail_delete_message;
+
+  /// No description provided for @device_detail_confirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定'**
+  String get device_detail_confirm;
+
+  /// No description provided for @device_detail_chart_current.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前'**
+  String get device_detail_chart_current;
+
+  /// No description provided for @device_detail_chart_max.
+  ///
+  /// In zh, this message translates to:
+  /// **'最高'**
+  String get device_detail_chart_max;
+
+  /// No description provided for @device_detail_chart_min.
+  ///
+  /// In zh, this message translates to:
+  /// **'最低'**
+  String get device_detail_chart_min;
+
+  /// No description provided for @device_detail_chart_avg.
+  ///
+  /// In zh, this message translates to:
+  /// **'平均'**
+  String get device_detail_chart_avg;
 }
 
 class _AppLocalizationsDelegate
