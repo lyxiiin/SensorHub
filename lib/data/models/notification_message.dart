@@ -36,7 +36,7 @@ class NotificationMessage {
       sensorName: map['sensorName'],
       sensorType: map['sensorType'],
       value: map['value'],
-      datetime: map['dateTime'],
+      datetime: map['datetime'],
     );
   }
 }

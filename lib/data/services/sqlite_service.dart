@@ -22,7 +22,7 @@ class SqliteService {
     logI('数据库初始化: $dbPath', tag: 'DB');
     return await openDatabase(
       dbPath,
-      version: 2,
+      version: 3,
       onCreate:_onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -39,7 +39,8 @@ class SqliteService {
         upTopic TEXT NOT NULL,
         downTopic TEXT NOT NULL,
         username TEXT NOT NULL,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        macAddress TEXT NOT NULL
       );
     ''');
     await db.execute('''
@@ -108,6 +109,11 @@ class SqliteService {
         PRIMARY KEY (config_id, sensor_type)
       );
     ''');
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        ALTER TABLE device_configs ADD COLUMN macAddress TEXT NOT NULL DEFAULT '';
+      ''');
     }
   }
 }

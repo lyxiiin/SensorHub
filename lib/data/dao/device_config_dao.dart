@@ -5,6 +5,10 @@ import '../models/device_config.dart';
 import '../services/sqlite_service.dart';
 
 class DeviceConfigDao {
+  static final DeviceConfigDao _instance = DeviceConfigDao._internal();
+  factory DeviceConfigDao() => _instance;
+  DeviceConfigDao._internal();
+
   Future<Database> get db async => SqliteService().database;
 
   // 插入
@@ -82,6 +86,18 @@ class DeviceConfigDao {
       'device_configs',
       where: 'clientId = ?',
       whereArgs: [clientId],
+    );
+    if (maps.isEmpty) return null;
+    return DeviceConfig.fromMap(maps.first);
+  }
+
+  // 根据 MAC 地址查询设备
+  Future<DeviceConfig?> getByMacAddress(String mac) async {
+    final db = await this.db;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'device_configs',
+      where: 'macAddress = ?',
+      whereArgs: [mac],
     );
     if (maps.isEmpty) return null;
     return DeviceConfig.fromMap(maps.first);

@@ -8,6 +8,7 @@ class DeviceConfig {
   final String downTopic;
   final String username;
   final String password;
+  final String macAddress;
 
   DeviceConfig({
     this.configId,
@@ -18,7 +19,8 @@ class DeviceConfig {
     required this.downTopic,
     required this.username,
     required this.password,
-    required this.deviceName
+    required this.deviceName,
+    required this.macAddress
   });
   // 从数据库行（Map<String, dynamic>）创建对象
   factory DeviceConfig.fromMap(Map<String, dynamic> map) {
@@ -32,6 +34,7 @@ class DeviceConfig {
       username: map['username'],
       password: map['password'],
       deviceName: map['deviceName'],
+      macAddress: map['macAddress'],
     );
   }
 
@@ -46,7 +49,8 @@ class DeviceConfig {
       'downTopic': downTopic,
       'username': username,
       'password': password,
-      'deviceName':deviceName
+      'deviceName':deviceName,
+      'macAddress': macAddress
     };
   }
 }

@@ -23,8 +23,8 @@ class Measurement {
   // 转为数据库Map,字段与measurements表一致
   Map<String, dynamic> toMap() => {
     'id': id,
-    'configId': configId,
-    'sensorType': sensorType.name,
+    'config_id': configId,
+    'sensor_type': sensorType.name,
     'value': value,
     'timestamp': timestamp,
   };
