@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
+import 'package:sensor_hub/ui/device_detail/widgets/device_detail_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/units_conversion_page.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
 import '../ui/main/widgets/app_navigation_page.dart';
 import '../ui/profile/widgets/language_selection_page.dart';
+
+import 'package:provider/provider.dart';
+import 'package:sensor_hub/ui/device_detail/device_detail_vm.dart';
+
 class Routes{
   static Route<dynamic> generateRoute(RouteSettings setting) {
     switch(setting.name){
@@ -20,6 +25,15 @@ class Routes{
         return pageRoute(UnitsConversionPage());
       case RoutePath.deviceRegistrationFrom:
         return pageRoute(DeviceRegistrationFormPage());
+      case RoutePath.deviceDetail:
+        final deviceId = setting.arguments as int;
+        return pageRoute(
+          ChangeNotifierProvider(
+            create: (_) => DeviceDetailVm(),
+            child: DeviceDetailPage(deviceId: deviceId),
+          ),
+          settings: setting,
+        );
     }
     logW('未知路由: ${setting.name}', tag: 'Router');
     return pageRoute(
@@ -61,7 +75,8 @@ class RoutePath{
   static const String unitsConversion = "UnitsConversionPage";
 
   //
-  static const String deviceAdd = "DeviceAddPage";
-  //
   static const String deviceRegistrationFrom = "DeviceRegistrationFromPage";
+
+  // 设备详情页
+  static const String deviceDetail = "DeviceDetailPage";
 }

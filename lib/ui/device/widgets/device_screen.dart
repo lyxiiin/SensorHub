@@ -242,7 +242,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         color: colorScheme.primary,
                         icon: Icon(Icons.add_circle_outline),
                         onPressed: () {
-                          RouteUtils.pushForNamed(context, RoutePath.deviceAdd);
+                          RouteUtils.pushForNamed(context, RoutePath.deviceRegistrationFrom);
                         },
                       ),
                     ),
@@ -271,7 +271,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
             final entry = vm.latestReadings.entries.elementAt(index);
             final deviceName = entry.key;
             final readings = entry.value;
-
+            final profile = vm.deviceProfiles[deviceName];
+            // 防御：profile 尚未同步时跳过该设备，避免空值崩溃
+            if (profile == null) return const SizedBox.shrink();
+            final deviceId = profile.configId;
             // 构建显示用的 Map：{ "温度": "25.5", "湿度": "65.0", ... }
             final displayMap = <String, String>{};
             // 取所有读数中最新的时间戳
@@ -292,7 +295,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     ? vm.getMinutesDifference(latestTimestamp).toString()
                     : "0",
                 dateList: readings,
-                onTap: () {},
+                onTap: () {
+                  RouteUtils.pushForNamed(context, RoutePath.deviceDetail,arguments: deviceId);
+                },
               ),
             );
           },
