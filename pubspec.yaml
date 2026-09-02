@@ -16,6 +16,7 @@ dependencies:
   # 状态管理
   provider: ^6.1.5+1
   # 网络请求
+  http: ^1.6.0
   dio: ^5.9.0
   # toast提示
   oktoast: ^3.4.0
@@ -25,6 +26,8 @@ dependencies:
   pull_to_refresh: ^2.0.0
   # 日志
   logger: ^2.6.2
+  # 图表
+  fl_chart: ^1.2.0
   # svg图标处理
   flutter_svg: ^2.2.2
   # 键值对存储
