@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:sensor_hub/data/repositories/mqtt_repository.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
@@ -13,16 +14,15 @@ import 'package:sensor_hub/data/models/device_profile.dart';
 import 'package:sensor_hub/data/decoders/payload_decoder.dart';
 import 'package:sensor_hub/data/decoders/sdtp_commands.dart';
 
-
-class DeviceVM with ChangeNotifier{
+class DeviceVM with ChangeNotifier {
   late final MqttRepository _mqttRepository;
-  late final DeviceConfigDao _configDao;
+  late final DeviceConfigDao _configDao = DeviceConfigDao();
   int get deviceCount => latestReadings.length;
   final Map<String, MqttService> _services = {};
-  final Map<String, DeviceProfile> deviceProfiles = {};               // 设备名 → 配置
-  final Map<String, Map<SensorType, Measurement>> latestReadings = {}; // 设备名 → (传感器类型 → 最新读数)
+  final Map<String, DeviceProfile> deviceProfiles = {}; // 设备名 → 配置
+  final Map<String, Map<SensorType, Measurement>> latestReadings =
+      {}; // 设备名 → (传感器类型 → 最新读数)
   bool isLoading = false;
-  bool _initEd = false;
   bool _initializing = false;
 
   Future<void> initData() async {
@@ -32,32 +32,27 @@ class DeviceVM with ChangeNotifier{
 
     try {
       _mqttRepository = MqttRepository();
-      _configDao = DeviceConfigDao();
       await _mqttRepository.init();
 
       // 设置5秒超时，避免阻塞界面
       await connectAllSavedDevices().timeout(
         Duration(seconds: 5),
         onTimeout: () {
-          logW('设备连接超时，将在后台继续连接', tag: 'DeviceVM');
-          // 超时后在后台继续连接
-          connectAllSavedDevices().catchError((e) {
-            logE('后台连接设备失败: $e', error: e, tag: 'DeviceVM');
-          });
-          return Future.value();
+          logW('设备连接超时，已加载的设备将正常显示，未完成的连接将在后台继续', tag: 'DeviceVM');
         },
       );
     } catch (e) {
       logE('初始化错误: $e', error: e, tag: 'DeviceVM');
     } finally {
       _initializing = false;
-      if(_initEd){
-        notifyListeners();
-      }
+      notifyListeners();
     }
   }
 
-  Future<void> publishMessage({required String topic, required List<int> payload}) async {
+  Future<void> publishMessage({
+    required String topic,
+    required List<int> payload,
+  }) async {
     // TODO: 由自定义传感器实现具体的发布逻辑
     logD('发布消息到主题: $topic, payload长度: ${payload.length}', tag: 'DeviceVM');
   }
@@ -75,44 +70,83 @@ class DeviceVM with ChangeNotifier{
     notifyListeners();
   }
 
-Future<void> connectAllSavedDevices() async {
-  final devicesConfig = await _mqttRepository.getLocalSavedDevices();
-  logI('初始化：读取到 ${devicesConfig.length} 个设备', tag: 'DeviceVM');
+  /// 删除设备：从内存缓存与数据库中移除，并断开无其他设备使用的 MQTT 连接
+  Future<void> removeDevice(int configId) async {
+    final configs = await _configDao.getAll();
+    DeviceConfig? target;
+    for (final config in configs) {
+      if (config.configId == configId) {
+        target = config;
+        break;
+      }
+    }
 
-  // 遍历所有设备，从数据库恢复最新读数快照，初始化内存缓存
-  for (final deviceConfig in devicesConfig) {
-    if (deviceConfig.configId != null) {
-      // 从 device_latest 快照表恢复最新数据
-      final dao = MeasurementDao();
-      final latest = await dao.queryLatest(deviceConfig.configId!);
-      latestReadings[deviceConfig.deviceName] = latest;
+    if (target == null) {
+      // 配置已不存在，仅兜底删除
+      await _configDao.delete(configId);
+      notifyListeners();
+      return;
+    }
+    final config = target;
 
-      // 根据已有数据自动构建 DeviceProfile
-      if (latest.isNotEmpty) {
+    latestReadings.remove(config.deviceName);
+    deviceProfiles.remove(config.deviceName);
+
+    // 若无其他设备使用同一 broker，断开该连接
+    final stillUsed = configs.any(
+      (c) =>
+          c.configId != configId &&
+          c.broker == config.broker &&
+          c.port == config.port,
+    );
+    if (!stillUsed) {
+      removeService(config.broker, config.port);
+    }
+
+    await _mqttRepository.deleteDevice(config.clientId, configId);
+    logI('已删除设备: ${config.deviceName} (configId=$configId)', tag: 'DeviceVM');
+    notifyListeners();
+  }
+
+  Future<void> connectAllSavedDevices() async {
+    final devicesConfig = await _mqttRepository.getLocalSavedDevices();
+    logI('初始化：读取到 ${devicesConfig.length} 个设备', tag: 'DeviceVM');
+
+    // 遍历所有设备，从数据库恢复最新读数快照，初始化内存缓存
+    for (final deviceConfig in devicesConfig) {
+      if (deviceConfig.configId != null) {
+        // 从 device_latest 快照表恢复最新数据
+        final dao = MeasurementDao();
+        final latest = await dao.queryLatest(deviceConfig.configId!);
+        latestReadings[deviceConfig.deviceName] = latest;
+
+        // 无论快照是否为空都构建 DeviceProfile，保证与 latestReadings 同步
         deviceProfiles[deviceConfig.deviceName] = DeviceProfile(
           configId: deviceConfig.configId!,
           deviceName: deviceConfig.deviceName,
           sensors: latest.keys.toList(),
           payloadVersion: 1,
         );
+      } else {
+        logW(
+          '设备 ${deviceConfig.deviceName} 的 configId 为空，无法恢复数据',
+          tag: 'DeviceVM',
+        );
+        latestReadings[deviceConfig.deviceName] = {};
       }
-    } else {
-      logW('设备 ${deviceConfig.deviceName} 的 configId 为空，无法恢复数据', tag: 'DeviceVM');
-      latestReadings[deviceConfig.deviceName] = {};
     }
-  }
 
-  // 建立 MQTT 连接（订阅数据），跳过 configId 为空的设备
-  for (final deviceConfig in devicesConfig) {
-    if (deviceConfig.configId == null) {
-      logW('跳过 configId 为空的设备: ${deviceConfig.deviceName}', tag: 'DeviceVM');
-      continue;
+    // 建立 MQTT 连接（订阅数据），跳过 configId 为空的设备
+    for (final deviceConfig in devicesConfig) {
+      if (deviceConfig.configId == null) {
+        logW('跳过 configId 为空的设备: ${deviceConfig.deviceName}', tag: 'DeviceVM');
+        continue;
+      }
+      await connectDeviceToMqtt(deviceConfig);
     }
-    await connectDeviceToMqtt(deviceConfig);
-  }
 
-  _initEd = true;
-}
+    notifyListeners();
+  }
 
   Future<void> connectDeviceToMqtt(DeviceConfig deviceConfig) async {
     final broker1 = getService(deviceConfig.broker, deviceConfig.port);
@@ -139,6 +173,16 @@ Future<void> connectAllSavedDevices() async {
     });
   }
 
+  /// 生成随机 clientId
+  static String _generateClientId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    final suffix = List.generate(
+      6,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
+    return 'sensorhub_$suffix';
+  }
 
   /// 添加设备
   Future<bool> addDevice({
@@ -146,44 +190,56 @@ Future<void> connectAllSavedDevices() async {
     required String name,
     required String broker,
     required int port,
-    required String clientId,
+    String? clientId,
     required String upTopic,
     required String downTopic,
     required String username,
     required String password,
+    required String macAddress,
   }) async {
     isLoading = true;
     notifyListeners();
 
-    // 避免设备名重复：如果已存在，则追加 (1)
-    String finalName = name;
-    if (deviceProfiles.containsKey(name)) {
-      finalName = "$name(1)";
+    // 自动生成 clientId（如果用户未指定）
+    final effectiveClientId = (clientId != null && clientId.isNotEmpty)
+        ? clientId
+        : _generateClientId();
+
+    // 避免设备名重复：查询数据库获取已有设备名（而非仅内存中的 deviceProfiles）
+    final existingConfigs = await _configDao.getAll();
+    final existingNames = existingConfigs.map((c) => c.deviceName).toSet();
+    String effectiveName = name;
+    if (existingNames.contains(name) || deviceProfiles.containsKey(name)) {
+      effectiveName = "$name(1)";
     }
-    try{
+    try {
       // 插入设备配置到数据库（configId 由数据库自增生成）
-      final configId = await _mqttRepository.insertDevice(DeviceConfig(
-        broker: broker,
-        deviceName: name,
-        port: port,
-        clientId: clientId,
-        upTopic: upTopic,
-        downTopic: downTopic,
-        username: username,
-        password: password,
-      ));
+      final configId = await _mqttRepository.insertDevice(
+        DeviceConfig(
+          broker: broker,
+          deviceName: effectiveName,
+          port: port,
+          clientId: effectiveClientId,
+          upTopic: upTopic,
+          downTopic: downTopic,
+          username: username,
+          password: password,
+          macAddress: macAddress,
+        ),
+      );
 
       // 用数据库返回的 configId 构造完整的 DeviceConfig
       final deviceConfig = DeviceConfig(
         configId: configId,
         broker: broker,
-        deviceName: name,
+        deviceName: effectiveName,
         port: port,
-        clientId: clientId,
+        clientId: effectiveClientId,
         upTopic: upTopic,
         downTopic: downTopic,
         username: username,
         password: password,
+        macAddress: macAddress,
       );
 
       // 获取或创建 MQTT 服务实例
@@ -199,11 +255,18 @@ Future<void> connectAllSavedDevices() async {
       );
       // 检查连接
       if (!broker1.isConnected) {
-        logE('MQTT 连接失败，无法添加设备: $finalName', tag: 'DeviceVM');
+        logE('MQTT 连接失败，无法添加设备: $effectiveName', tag: 'DeviceVM');
         await _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
         return false;
       }
-      latestReadings[finalName] = {};
+      latestReadings[effectiveName] = {};
+      // 同步创建 profile，保证设备列表可正常渲染（收到首条数据后 _autoDetectProfile 会补充传感器）
+      deviceProfiles[effectiveName] = DeviceProfile(
+        configId: configId,
+        deviceName: effectiveName,
+        sensors: const [],
+        payloadVersion: 1,
+      );
 
       // 检查是否已经存在对该主题的订阅，如果有则先取消
       if (broker1.isSubscribed(deviceConfig.upTopic)) {
@@ -224,9 +287,9 @@ Future<void> connectAllSavedDevices() async {
       // 启动监听：收到第一次有效数据即视为成功
       void listener() {
         if (completer.isCompleted) return; // 已判定结果，不再重复处理
-        final readings = latestReadings[finalName];
+        final readings = latestReadings[effectiveName];
         if (readings != null && readings.isNotEmpty) {
-          logI('检测到 $finalName 收到有效数据，设备添加成功', tag: 'DeviceVM');
+          logI('检测到 $effectiveName 收到有效数据，设备添加成功', tag: 'DeviceVM');
           isLoading = false;
           notifyListeners();
           completer.complete(true);
@@ -234,10 +297,11 @@ Future<void> connectAllSavedDevices() async {
       }
 
       addListener(listener);
+      await sendCommand(deviceConfig, SdtpFrame.fetchData());
       // 超时机制
       Future.delayed(const Duration(seconds: 10), () {
         if (!completer.isCompleted) {
-          logW('设备 $finalName 添加超时（10秒内未收到有效数据）', tag: 'DeviceVM');
+          logW('设备 $effectiveName 添加超时（10秒内未收到有效数据）', tag: 'DeviceVM');
           completer.complete(false);
         }
       });
@@ -245,10 +309,10 @@ Future<void> connectAllSavedDevices() async {
       final result = await completer.future;
       removeListener(listener);
 
-      if(result == false){
+      if (result == false) {
         _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
-        deviceProfiles.remove(deviceConfig.deviceName);
-        latestReadings.remove(deviceConfig.deviceName);
+        deviceProfiles.remove(effectiveName);
+        latestReadings.remove(effectiveName);
         broker1.unsubscribe(deviceConfig.upTopic);
         broker1.disconnect();
       }
@@ -256,7 +320,7 @@ Future<void> connectAllSavedDevices() async {
     } catch (e, stack) {
       logE('添加设备失败: $e', error: e, stack: stack, tag: 'DeviceVM');
       return false;
-    }finally{
+    } finally {
       isLoading = false;
       notifyListeners();
     }
@@ -276,7 +340,10 @@ Future<void> connectAllSavedDevices() async {
       hexStr = String.fromCharCodes(payload);
     }
 
-    logD('收到 ${config.deviceName} 消息: hex长度=${hexStr.length}, configId=${config.configId}', tag: 'DeviceVM');
+    logD(
+      '收到 ${config.deviceName} 消息: hex长度=${hexStr.length}, configId=${config.configId}',
+      tag: 'DeviceVM',
+    );
 
     final measurements = PayloadDecoder.decode(
       hexStr,
@@ -285,7 +352,7 @@ Future<void> connectAllSavedDevices() async {
 
     if (measurements.isEmpty) return;
 
-    await MeasurementDao().insertBatch(measurements);
+    // await MeasurementDao().insertBatch(measurements);
 
     final latest = latestReadings[config.deviceName] ?? {};
     for (final m in measurements) {
@@ -308,13 +375,12 @@ Future<void> connectAllSavedDevices() async {
     return now.difference(past).inMinutes;
   }
 
-  Future<void> refreshData() async  {
+  Future<void> refreshData() async {
     final configs = await _configDao.getAll();
     for (final config in configs) {
       await sendCommand(config, SdtpFrame.fetchData());
     }
   }
-
 
   /// 向设备发送 SDTP 命令
   Future<void> sendCommand(DeviceConfig config, List<int> payload) async {
@@ -330,11 +396,11 @@ Future<void> connectAllSavedDevices() async {
           password: config.password,
         );
       }
-      await broker1.publish(
-        topic: config.downTopic,
-        payload: payload,
+      await broker1.publish(topic: config.downTopic, payload: payload);
+      logI(
+        '已发送命令到 ${config.deviceName}，payload: ${payload.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}',
+        tag: 'DeviceVM',
       );
-      logI('已发送命令到 ${config.deviceName}，payload: ${payload.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}', tag: 'DeviceVM');
     } catch (e) {
       logE('发送命令失败: $e', error: e, tag: 'DeviceVM');
     }
@@ -357,11 +423,11 @@ Future<void> connectAllSavedDevices() async {
           password: config.password,
         );
       }
-      await broker1.publish(
-        topic: config.downTopic,
-        payload: payload,
+      await broker1.publish(topic: config.downTopic, payload: payload);
+      logI(
+        '已发送自定义命令到 ${config.deviceName}，payload长度: ${payload.length}',
+        tag: 'DeviceVM',
       );
-      logI('已发送自定义命令到 ${config.deviceName}，payload长度: ${payload.length}', tag: 'DeviceVM');
     } catch (e) {
       logE('发送自定义命令失败: $e', error: e, tag: 'DeviceVM');
     }
@@ -415,7 +481,7 @@ Future<void> connectAllSavedDevices() async {
         deviceName: deviceName,
         sensors: detectedSensors.toList(),
         payloadVersion: existingProfile.payloadVersion,
-        thresholds: existingProfile.thresholds,  // 保留已配置的阈值
+        thresholds: existingProfile.thresholds, // 保留已配置的阈值
       );
 
       if (newSensors.isNotEmpty) {
@@ -432,7 +498,6 @@ Future<void> connectAllSavedDevices() async {
     return a.length == b.length && a.containsAll(b);
   }
 
-
   // 预留函数，后续接入notificationVM
   /// 检查 Measurement 是否超过阈值，生成通知
   void _checkThresholdsAndNotify(
@@ -447,14 +512,14 @@ Future<void> connectAllSavedDevices() async {
       if (threshold == null) continue;
 
       if (m.value > threshold.maxValue || m.value < threshold.minValue) {
-        logW('告警: ${config.deviceName} ${m.sensorType.displayName}=${m.formattedValue}'
-            '${m.sensorType.unit} 超出阈值 [${threshold.minValue}~${threshold.maxValue}]', tag: 'DeviceVM');
+        logW(
+          '告警: ${config.deviceName} ${m.sensorType.displayName}=${m.formattedValue}'
+          '${m.sensorType.unit} 超出阈值 [${threshold.minValue}~${threshold.maxValue}]',
+          tag: 'DeviceVM',
+        );
         // TODO: 调用 NotificationMessageDao().insert(...) 写入通知表
         // TODO: 触发 NotificationVM 刷新
       }
     }
   }
-
-
-
 }
