@@ -186,7 +186,7 @@ class DeviceVM with ChangeNotifier {
 
   /// 添加设备
   Future<bool> addDevice({
-    required String sensorType,
+    // required String sensorType,
     required String name,
     required String broker,
     required int port,
@@ -352,7 +352,7 @@ class DeviceVM with ChangeNotifier {
 
     if (measurements.isEmpty) return;
 
-    // await MeasurementDao().insertBatch(measurements);
+    await MeasurementDao().insertBatch(measurements);
 
     final latest = latestReadings[config.deviceName] ?? {};
     for (final m in measurements) {

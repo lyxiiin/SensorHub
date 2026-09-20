@@ -9,6 +9,8 @@ import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
+import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
+import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
 import 'package:sensor_hub/ui/device_detail/device_detail_vm.dart';
 import 'package:sensor_hub/ui/device_detail/widgets/device_detail_page.dart';
 import 'package:sensor_hub/ui/device_detail/widgets/device_info_section.dart';
@@ -99,7 +101,7 @@ void main() {
 
       // 工具栏
       expect(find.text('温度 (℃)'), findsOneWidget);
-      expect(find.text('1h'), findsOneWidget);
+      expect(find.text('1d'), findsOneWidget);
       expect(find.text('7d'), findsOneWidget);
       // 统计摘要（温度保留 2 位小数；Text.rich 需用 textContaining 匹配）
       expect(find.text('当前'), findsOneWidget);
@@ -119,7 +121,7 @@ void main() {
             availableSensors: [SensorType.temperature],
             chartData: [],
             selectedType: SensorType.temperature,
-            selectedRange: '24h',
+            selectedRange: '1d',
           ),
         ),
       );
@@ -136,7 +138,7 @@ void main() {
             availableSensors: [SensorType.temperature],
             chartData: [],
             selectedType: SensorType.temperature,
-            selectedRange: '24h',
+            selectedRange: '1d',
             isLoading: true,
           ),
         ),
@@ -155,15 +157,15 @@ void main() {
             availableSensors: const [SensorType.temperature],
             chartData: temperatureHistory(),
             selectedType: SensorType.temperature,
-            selectedRange: '24h',
+            selectedRange: '1d',
             onTimeRangeChanged: (range) => changed = range,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('1h'));
-      expect(changed, '1h');
+      await tester.tap(find.text('1d'));
+      expect(changed, '1d');
     });
 
     testWidgets('切换传感器下拉上报回调', (tester) async {
@@ -178,7 +180,7 @@ void main() {
             ],
             chartData: temperatureHistory(),
             selectedType: SensorType.temperature,
-            selectedRange: '24h',
+            selectedRange: '1d',
             onSensorTypeChanged: (type) => changed = type,
           ),
         ),
@@ -300,6 +302,102 @@ void main() {
       // 图表统计摘要（温度数据）
       expect(find.textContaining('31.00'), findsWidgets);
     });
+
+    testWidgets('详情页编辑：表单页能收到 DeviceConfig 路由参数并预填', (tester) async {
+      usePhoneSurface(tester);
+      final config = DeviceConfig(
+        configId: 7,
+        deviceName: '环境监测站',
+        broker: '192.168.1.10',
+        port: 1883,
+        clientId: 'c7',
+        upTopic: 'env_monitor/AABBCCDDEEFF/data',
+        downTopic: 'env_monitor/AABBCCDDEEFF/cmd',
+        username: 'mqtt_user',
+        password: 'secret123',
+        macAddress: 'AABBCCDDEEFF',
+      );
+
+      // 模拟 RouteUtils.pushForNamed(..., arguments: config) 之后的页面栈
+      final navKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(393, 873),
+          builder: (context, _) => MultiProvider(
+            providers: [ChangeNotifierProvider(create: (_) => DeviceVM())],
+            child: MaterialApp(
+              navigatorKey: navKey,
+              locale: const Locale('zh'),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              // 等价于 Routes.generateRoute：
+              // 关键是 settings 原样透传给页面，arguments 才能被 ModalRoute 读到
+              onGenerateRoute: (settings) => MaterialPageRoute(
+                settings: settings,
+                builder: (_) => const DeviceRegistrationFormPage(),
+              ),
+            ),
+          ),
+        ),
+      );
+      navKey.currentState!.pushNamed(
+        'DeviceRegistrationFromPage',
+        arguments: config,
+      );
+      await tester.pumpAndSettle();
+
+      // 路由参数被正确解析：以编辑态呈现
+      expect(find.text('编辑设备'), findsOneWidget);
+      expect(find.text('保存修改'), findsOneWidget);
+      // 表单字段按 DeviceConfig 预填
+      expect(
+        tester.widget<TextFormField>(
+          find.widgetWithText(TextFormField, '名称'),
+        ).controller!.text,
+        '环境监测站',
+      );
+      expect(
+        tester.widget<TextFormField>(
+          find.widgetWithText(TextFormField, '服务器地址(Broker)'),
+        ).controller!.text,
+        '192.168.1.10',
+      );
+      expect(
+        tester.widget<TextFormField>(
+          find.widgetWithText(TextFormField, '端口(Port)'),
+        ).controller!.text,
+        '1883',
+      );
+      expect(
+        tester.widget<TextFormField>(
+          find.widgetWithText(TextFormField, '上行主题(Topic)'),
+        ).controller!.text,
+        'env_monitor/AABBCCDDEEFF/data',
+      );
+      // 已有 clientId → 高级设置自动展开并回填
+      expect(
+        tester.widget<TextFormField>(
+          find.widgetWithText(TextFormField, '客户端ID (Client ID)'),
+        ).controller!.text,
+        'c7',
+      );
+    });
+
+    testWidgets('无路由参数进入表单页时保持注册态（不加参数即新增）', (tester) async {
+      usePhoneSurface(tester);
+      await tester.pumpWidget(
+        wrap(
+          ChangeNotifierProvider(
+            create: (_) => DeviceVM(),
+            child: const DeviceRegistrationFormPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('注册设备'), findsWidgets);
+      expect(find.text('编辑设备'), findsNothing);
+    });
   });
 }
 
@@ -317,6 +415,9 @@ class _FakeConfigDao implements DeviceConfigDao {
 
   @override
   Future<int> update(DeviceConfig config) async => 1;
+
+  @override
+  Future<int> updateByClientId(DeviceConfig config) async => 1;
 
   @override
   Future<int> delete(int id) async => 1;

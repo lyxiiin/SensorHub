@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/dao/measurement_dao.dart';
+import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
@@ -24,14 +25,14 @@ class DeviceDetailVm extends ChangeNotifier {
 
   /// 支持的时间范围标签 → 时长
   static const Map<String, Duration> timeRangeOptions = {
-    '1h': Duration(hours: 1),
-    '6h': Duration(hours: 6),
-    '24h': Duration(hours: 24),
+    '1d': Duration(days: 1),
     '7d': Duration(days: 7),
+    '30d': Duration(days: 30),
+    '180d': Duration(days: 180),
   };
 
   int? deviceId;
-
+  DeviceConfig? currentDevice;
   // ── 设备信息 ────────────────────────────────────────────────────
   String deviceName = '';
   String macAddress = '';
@@ -60,7 +61,7 @@ class DeviceDetailVm extends ChangeNotifier {
   // ── 图表相关 ────────────────────────────────────────────────────
   List<SensorType> availableSensors = [];
   SensorType? selectedType;
-  String selectedRange = '24h';
+  String selectedRange = '1d';
   List<Measurement> chartData = [];
 
   bool isLoading = true;
@@ -112,9 +113,14 @@ class DeviceDetailVm extends ChangeNotifier {
   }
 
   Future<void> _loadDeviceInfo() async {
-    final config = await _configDao.getById(deviceId!);
-    deviceName = config?.deviceName ?? '';
-    macAddress = config?.macAddress ?? '';
+    // 设备可能已被删除或 configId 已失效，此处不能强制解包，
+    // 否则 getById 返回 null 时会抛 "Null check operator used on a null value"。
+    currentDevice = await _configDao.getById(deviceId!);
+    if (currentDevice == null) {
+      logW('未找到设备配置: deviceId=$deviceId', tag: 'DeviceDetailVm');
+    }
+    deviceName = currentDevice?.deviceName ?? "";
+    macAddress = currentDevice?.macAddress ?? "";
   }
 
   /// 从 device_latest 快照表加载各传感器最新读数，
@@ -146,7 +152,7 @@ class DeviceDetailVm extends ChangeNotifier {
     notifyListeners();
 
     final now = DateTime.now();
-    final range = timeRangeOptions[selectedRange] ?? const Duration(hours: 24);
+    final range = timeRangeOptions[selectedRange] ?? const Duration(days: 1);
     final startTime = now.subtract(range).millisecondsSinceEpoch ~/ 1000;
 
     try {

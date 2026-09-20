@@ -24,7 +24,7 @@ class Routes{
       case RoutePath.unitsConversion:
         return pageRoute(UnitsConversionPage());
       case RoutePath.deviceRegistrationFrom:
-        return pageRoute(DeviceRegistrationFormPage());
+        return pageRoute(DeviceRegistrationFormPage(), settings: setting);
       case RoutePath.deviceDetail:
         final deviceId = setting.arguments as int;
         return pageRoute(

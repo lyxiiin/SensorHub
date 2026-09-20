@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
+import 'package:sensor_hub/ui/notification/widgets/notification_screen.dart';
 
 /// 历史趋势卡片
 ///
@@ -26,14 +29,21 @@ class SensorChartCard extends StatelessWidget {
     required this.availableSensors,
     required this.chartData,
     this.selectedType,
-    this.selectedRange = '24h',
+    this.selectedRange = '1d',
     this.isLoading = false,
     this.onSensorTypeChanged,
     this.onTimeRangeChanged,
   });
 
-  static const _timeRanges = ['1h', '6h', '24h', '7d'];
+  static const _timeRanges = ['1d', '7d', '30d', '180d'];
   static const double _chartHeight = 220;
+
+  static const List<int> _niceTimeSteps = [
+    60, 300, 600, 900, 1800,      // 1/5/10/15/30 分钟
+    3600, 7200, 10800, 14400,     // 1/2/3/4 小时
+    21600, 43200, 86400,          // 6/12/24 小时
+  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -199,39 +209,37 @@ class SensorChartCard extends StatelessWidget {
   // ── 图表主体 ────────────────────────────────────────────────────
   Widget _buildChart(ColorScheme colorScheme, SensorType sensor) {
     final color = Color(sensor.iconColor);
-    final spots = chartData.asMap().entries.map((entry) {
-      final m = entry.value;
-      return FlSpot(m.timestamp.toDouble(), m.sensorType.restoreValue(m.value));
+    final spots = chartData.map((entry) {
+      return FlSpot(entry.timestamp.toDouble(), entry.sensorType.restoreValue(entry.value));
     }).toList();
 
-    // X 轴范围（秒级时间戳），单点时外扩 60s，多点时外扩 2%
-    final minX = spots.first.x;
+    // X 轴窗口：以最新数据点为"现在"，完整覆盖所选时间范围；
+    // 头 = 最新点 - 范围 - 偏移，尾 = 最新点 + 偏移（偏移取范围的 2%）
     final maxX = spots.last.x;
-    final xSpan = (maxX - minX).abs();
-    final xPad = xSpan == 0 ? 60.0 : xSpan * 0.02;
-    final xMin = minX - xPad;
+    final currentRange = switch(selectedRange){
+      "1d" =>	86400,
+      "7d" =>	604800,
+      "30d" => 2592000,
+          _ => 15552000,
+    };
+    final xPad = currentRange * 0.02;
+    final xMin = maxX - currentRange - xPad;
     final xMax = maxX + xPad;
+    // 中间刻度按窗口长度取"整"步长（配合 baselineX 对齐到本地整点）
+    final xInterval = _niceTimeInterval(xMax - xMin, targetTicks: 6);
 
-    // Y 轴范围，平直数据时外扩 ±1
-    var minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
-    var maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
-    if (maxY == minY) {
-      minY -= 1;
-      maxY += 1;
-    } else {
-      final pad = (maxY - minY) * 0.1;
-      minY -= pad;
-      maxY += pad;
-    }
+    // Y 轴：1-2-5 序列取整，含端点在内所有刻度均为整值
+    final dataMinY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
+    final dataMaxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+    final (minY, maxY, yInterval) = _niceYScale(dataMinY, dataMaxY,targetTicks: 4);
 
-    final isLongRange = selectedRange == '7d';
-    final xInterval = (xSpan == 0 ? 300.0 : xSpan / 4);
-    final yInterval = (maxY - minY) / 4;
+    final isLongRange = selectedRange != '1d';
 
     return SizedBox(
       height: _chartHeight,
       child: LineChart(
         LineChartData(
+          baselineX: _localTickBaseline(),
           minX: xMin,
           maxX: xMax,
           minY: minY,
@@ -263,12 +271,10 @@ class SensorChartCard extends StatelessWidget {
                   meta: meta,
                   space: 8,
                   child: Text(
-                    _formatValue(value, sensor),
+                    _formatValue(value, sensor) + sensor.unit,
                     style: TextStyle(
                       fontSize: 10.sp,
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
-                      ),
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -279,19 +285,32 @@ class SensorChartCard extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 26,
                 interval: xInterval,
-                getTitlesWidget: (value, meta) => SideTitleWidget(
-                  meta: meta,
-                  space: 8,
-                  child: Text(
-                    _formatTime(value.toInt(), isLongRange: isLongRange),
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
+                getTitlesWidget: (value, meta) {
+                  final isEdge = (value - meta.min).abs() < 0.5 || (value - meta.max).abs() < 0.5;
+                  if (!isEdge &&
+                      (value - meta.min < xInterval * 0.45 ||
+                          meta.max - value < xInterval * 0.45)) {
+                    return const SizedBox.shrink();
+                  }
+                  // 头尾与中间刻度同格式：1d 只显示时间，>1d 只显示日期
+                  final text = _formatTime(value.toInt(), isLongRange: isLongRange);
+                  return SideTitleWidget(
+                    meta: meta,
+                    space: 8,
+                    fitInside: SideTitleFitInsideData.fromTitleMeta(meta),
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        // 头尾锚点用最高强调色 + 加粗，中间整点用次级强调色
+                        fontWeight: isEdge ? FontWeight.w600 : FontWeight.w500,
+                        color: isEdge
+                            ? colorScheme.onSurface
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -420,4 +439,39 @@ class SensorChartCard extends StatelessWidget {
     final dt = DateTime.fromMillisecondsSinceEpoch(timestampSec * 1000);
     return DateFormat(isLongRange ? 'MM-dd' : 'HH:mm').format(dt);
   }
+
+  static double _niceTimeInterval(double spanSec, {int targetTicks = 4}) {
+    final raw = spanSec / targetTicks;
+    for(final step in _niceTimeSteps) {
+      if(step >= raw) return step.toDouble();
+    }
+    return (raw / 86400).ceil() * 86400.0;
+  }
+
+  static double _localTickBaseline() {
+    final off = DateTime.now().timeZoneOffset.inSeconds;
+    return ((86400 - off) % 86400).toDouble();
+  }
+
+  static (double, double, double) _niceYScale(double minData, double maxData,{int targetTicks = 6}){
+    var span = (maxData - minData).abs();
+    if(span <= 0) span = maxData.abs() * 0.1;
+    if(span <= 0) span = 1.0;
+    final raw = span / targetTicks;
+    final exp = (log(raw) / ln10).floor();
+    final mantissa =  raw / pow(10.0, exp);
+    final unit = mantissa <= 1 ? 1.0 : mantissa <= 2 ? 2.0 : mantissa <= 5 ? 5.0 : 10.0;
+    final step = unit * pow(10.0, exp).toDouble();
+    // 数据范围向外取整（下取整 / 上取整），端点即为整值刻度
+    final eps = step * 1e-6; // 防 FP 噪声：19.999999 不至于取到 18
+    var min = ((minData + eps) / step).floorToDouble() * step;
+    var max = ((maxData - eps) / step).ceilToDouble() * step;
+    if (max == min) {
+      // 数据恰好恒为步长整数倍（如恒为 400）：向外各扩一步
+      min -= step;
+      max += step;
+    }
+    return (min, max, step);
+  }
+
 }

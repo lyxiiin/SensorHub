@@ -80,7 +80,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       ],
                     ),
                   ),
-                  deviceStateCards(colorScheme,appText)
+                  // deviceStateCards(colorScheme,appText)
                 ],
               ),
             ),

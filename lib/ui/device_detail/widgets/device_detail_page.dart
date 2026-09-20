@@ -3,10 +3,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
+import 'package:sensor_hub/data/dao/device_config_dao.dart';
+import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/route/route_utils.dart';
+import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/device_detail/device_detail_vm.dart';
 import 'package:sensor_hub/ui/device_detail/widgets/device_info_section.dart';
@@ -136,16 +139,53 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
     );
   }
 
-  Future<void> _onMenuSelected(String value) async {
-    final l10n = AppLocalizations.of(context);
+  /// 菜单项回调
+  ///
+  /// 保持同步签名：传给 PopupMenuButton.onSelected 的函数返回 void，
+  /// 声明为 Future 会触发 argument_type_not_assignable；异步逻辑放到被调用的方法里。
+  void _onMenuSelected(String value) {
     switch (value) {
       case 'edit':
-        // TODO: 跳转到编辑页（预填设备配置）
-        showToast(l10n.common_ui_coming_soon);
+        _editDevice();
         break;
       case 'delete':
-        await _confirmDelete();
+        _confirmDelete();
         break;
+    }
+  }
+
+  /// 跳转编辑页：把当前设备配置作为一个整体传给注册表单页复用
+  Future<void> _editDevice() async {
+    final l10n = AppLocalizations.of(context);
+    final config = await _configForEdit();
+    if (!mounted) return;
+    if (config == null) {
+      showToast(l10n.device_detail_unknown_device);
+      return;
+    }
+    final popResult = await RouteUtils.pushForNamed(
+      context,
+      RoutePath.deviceRegistrationFrom,
+      arguments: config,
+    );
+    // 编辑页保存后回传 true → 刷新详情，保证标题/概览卡显示最新名称
+    if (popResult == true && mounted) {
+      await context.read<DeviceDetailVm>().refresh();
+    }
+  }
+
+  /// 取用于编辑的配置
+  ///
+  /// 详情页首次 build 时 initData 还在 post-frame 回调里，currentDevice 可能为 null，
+  /// 此时回落到数据库按 deviceId 读取，避免把 null 传给表单页。
+  Future<DeviceConfig?> _configForEdit() async {
+    final vm = context.read<DeviceDetailVm>();
+    if (vm.currentDevice != null) return vm.currentDevice;
+    try {
+      return await DeviceConfigDao().getById(widget.deviceId);
+    } catch (e) {
+      logE('读取设备配置失败: $e', error: e, tag: 'DeviceDetailPage');
+      return null;
     }
   }
 

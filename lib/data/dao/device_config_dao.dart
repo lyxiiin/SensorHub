@@ -43,6 +43,27 @@ class DeviceConfigDao {
     }
   }
 
+  /// 按 clientId 更新（编辑设备时 clientId 是稳定标识，configId 可能未随参数带过来）
+  Future<int> updateByClientId(DeviceConfig config) async {
+    if (config.clientId.isEmpty) {
+      throw ArgumentError('clientId cannot be empty for updateByClientId');
+    }
+    final db = await this.db;
+    try {
+      final count = await db.update(
+        'device_configs',
+        config.toMap(),
+        where: 'clientId = ?',
+        whereArgs: [config.clientId],
+      );
+      logD('更新设备配置: ${config.deviceName} (clientId=${config.clientId})', tag: 'DAO');
+      return count;
+    } catch (e) {
+      logE('更新设备配置失败: ${config.deviceName}, $e', error: e, tag: 'DAO');
+      rethrow;
+    }
+  }
+
   // 删除
   Future<int> delete(int id) async {
     final db = await this.db;
