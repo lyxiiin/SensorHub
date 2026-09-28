@@ -1,6 +1,7 @@
 class DeviceConfig {
   final int? configId; // UUID
   final String deviceName;
+  final int? groupId;
   final String broker;
   final int port;
   final String clientId;
@@ -12,6 +13,7 @@ class DeviceConfig {
 
   DeviceConfig({
     this.configId,
+    this.groupId,
     required this.broker,
     required this.port,
     required this.clientId,
@@ -34,6 +36,7 @@ class DeviceConfig {
       username: map['username'],
       password: map['password'],
       deviceName: map['deviceName'],
+      groupId: map['groupId'],
       macAddress: map['macAddress'],
     );
   }
@@ -50,6 +53,7 @@ class DeviceConfig {
       'username': username,
       'password': password,
       'deviceName':deviceName,
+      'groupId':groupId,
       'macAddress': macAddress
     };
   }

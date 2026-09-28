@@ -28,6 +28,7 @@ class ThresholdConfig {
 class DeviceProfile {
   final int configId;
   final String deviceName;
+  final int? groupId;
   final List<SensorType> sensors;
   final Map<SensorType, ThresholdConfig> thresholds;
   final int payloadVersion;
@@ -36,6 +37,7 @@ class DeviceProfile {
     required this.configId,
     required this.deviceName,
     required this.sensors,
+    this.groupId,
     this.thresholds = const {},
     this.payloadVersion = 1,
   });
