@@ -45,6 +45,67 @@ class AppLocalizationsJa extends AppLocalizations {
   String get device_screen_minutes_ago => '分前';
 
   @override
+  String get device_screen_all_devices => 'すべてのデバイス';
+
+  @override
+  String get device_screen_group_empty => 'このグループにデバイスがありません';
+
+  @override
+  String get device_screen_ungrouped_empty => '未分類のデバイスはありません';
+
+  @override
+  String get device_screen_no_devices => 'デバイスがありません';
+
+  @override
+  String get device_screen_manage_groups => 'グループ管理';
+
+  @override
+  String get device_form_group => 'デバイスグループ';
+
+  @override
+  String get device_group_ungrouped => '未分類';
+
+  @override
+  String get group_manage_title => 'グループ管理';
+
+  @override
+  String get group_manage_new_group => '新規グループ';
+
+  @override
+  String get group_manage_rename => '名前を変更';
+
+  @override
+  String get group_manage_delete => '削除';
+
+  @override
+  String get group_manage_empty => 'グループがありません\n下のボタンから作成できます';
+
+  @override
+  String get group_manage_name_hint => 'グループ名を入力';
+
+  @override
+  String get group_manage_name_empty => 'グループ名を入力してください';
+
+  @override
+  String get group_manage_name_duplicate => 'このグループ名はすでに存在します';
+
+  @override
+  String get group_manage_delete_title => 'グループを削除';
+
+  @override
+  String group_manage_delete_message(String name, int count) {
+    return '「$name」を削除しますか？$count 台のデバイスが未分類になります。';
+  }
+
+  @override
+  String group_manage_device_count(int count) {
+    return '$count 台';
+  }
+
+  @override
+  String get group_manage_operation_failed => '操作に失敗しました。もう一度お試しください';
+
+  @override
   String get profile_screen_personal_info => '個人情報';
 
   @override

@@ -13,6 +13,27 @@
   "device_screen_prompt": "新增您的第一台裝置",
   "device_screen_unknown_sensor": "未知感測器",
   "device_screen_minutes_ago": "分鐘前",
+  "device_screen_all_devices": "全部裝置",
+  "device_screen_group_empty": "該分組暫無裝置",
+  "device_screen_ungrouped_empty": "暫無未分組裝置",
+  "device_screen_no_devices": "暫無裝置",
+  "device_screen_manage_groups": "管理分組",
+
+  "device_form_group": "裝置分組",
+  "device_group_ungrouped": "未分組",
+
+  "group_manage_title": "管理分組",
+  "group_manage_new_group": "新增分組",
+  "group_manage_rename": "重新命名",
+  "group_manage_delete": "刪除",
+  "group_manage_empty": "還沒有分組\n點擊下方按鈕新建一個吧",
+  "group_manage_name_hint": "請輸入分組名稱",
+  "group_manage_name_empty": "分組名稱不能為空",
+  "group_manage_name_duplicate": "該分組名稱已存在",
+  "group_manage_delete_title": "刪除分組",
+  "group_manage_delete_message": "確定要刪除「{name}」嗎？組內 {count} 台裝置將變為未分組。",
+  "group_manage_device_count": "{count} 台裝置",
+  "group_manage_operation_failed": "操作失敗，請重試",
 
 
   "profile_screen_personal_info": "個人資料",

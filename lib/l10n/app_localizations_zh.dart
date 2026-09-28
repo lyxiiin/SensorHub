@@ -45,6 +45,67 @@ class AppLocalizationsZh extends AppLocalizations {
   String get device_screen_minutes_ago => '分钟前';
 
   @override
+  String get device_screen_all_devices => '全部设备';
+
+  @override
+  String get device_screen_group_empty => '该分组暂无设备';
+
+  @override
+  String get device_screen_ungrouped_empty => '暂无未分组设备';
+
+  @override
+  String get device_screen_no_devices => '暂无设备';
+
+  @override
+  String get device_screen_manage_groups => '管理分组';
+
+  @override
+  String get device_form_group => '设备分组';
+
+  @override
+  String get device_group_ungrouped => '未分组';
+
+  @override
+  String get group_manage_title => '分组管理';
+
+  @override
+  String get group_manage_new_group => '新建分组';
+
+  @override
+  String get group_manage_rename => '重命名';
+
+  @override
+  String get group_manage_delete => '删除';
+
+  @override
+  String get group_manage_empty => '还没有分组\n点击下方按钮新建一个吧';
+
+  @override
+  String get group_manage_name_hint => '请输入分组名称';
+
+  @override
+  String get group_manage_name_empty => '分组名称不能为空';
+
+  @override
+  String get group_manage_name_duplicate => '该分组名称已存在';
+
+  @override
+  String get group_manage_delete_title => '删除分组';
+
+  @override
+  String group_manage_delete_message(String name, int count) {
+    return '确定要删除「$name」吗？组内 $count 台设备将变为未分组。';
+  }
+
+  @override
+  String group_manage_device_count(int count) {
+    return '$count 台设备';
+  }
+
+  @override
+  String get group_manage_operation_failed => '操作失败，请重试';
+
+  @override
   String get profile_screen_personal_info => '个人资料';
 
   @override
@@ -177,6 +238,67 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get device_screen_minutes_ago => '分鐘前';
+
+  @override
+  String get device_screen_all_devices => '全部裝置';
+
+  @override
+  String get device_screen_group_empty => '該分組暫無裝置';
+
+  @override
+  String get device_screen_ungrouped_empty => '暫無未分組裝置';
+
+  @override
+  String get device_screen_no_devices => '暫無裝置';
+
+  @override
+  String get device_screen_manage_groups => '管理分組';
+
+  @override
+  String get device_form_group => '裝置分組';
+
+  @override
+  String get device_group_ungrouped => '未分組';
+
+  @override
+  String get group_manage_title => '管理分組';
+
+  @override
+  String get group_manage_new_group => '新增分組';
+
+  @override
+  String get group_manage_rename => '重新命名';
+
+  @override
+  String get group_manage_delete => '刪除';
+
+  @override
+  String get group_manage_empty => '還沒有分組\n點擊下方按鈕新建一個吧';
+
+  @override
+  String get group_manage_name_hint => '請輸入分組名稱';
+
+  @override
+  String get group_manage_name_empty => '分組名稱不能為空';
+
+  @override
+  String get group_manage_name_duplicate => '該分組名稱已存在';
+
+  @override
+  String get group_manage_delete_title => '刪除分組';
+
+  @override
+  String group_manage_delete_message(String name, int count) {
+    return '確定要刪除「$name」嗎？組內 $count 台裝置將變為未分組。';
+  }
+
+  @override
+  String group_manage_device_count(int count) {
+    return '$count 台裝置';
+  }
+
+  @override
+  String get group_manage_operation_failed => '操作失敗，請重試';
 
   @override
   String get profile_screen_personal_info => '個人資料';

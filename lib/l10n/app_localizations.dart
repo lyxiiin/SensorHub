@@ -173,6 +173,120 @@ abstract class AppLocalizations {
   /// **'分钟前'**
   String get device_screen_minutes_ago;
 
+  /// No description provided for @device_screen_all_devices.
+  ///
+  /// In zh, this message translates to:
+  /// **'全部设备'**
+  String get device_screen_all_devices;
+
+  /// No description provided for @device_screen_group_empty.
+  ///
+  /// In zh, this message translates to:
+  /// **'该分组暂无设备'**
+  String get device_screen_group_empty;
+
+  /// No description provided for @device_screen_ungrouped_empty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无未分组设备'**
+  String get device_screen_ungrouped_empty;
+
+  /// No description provided for @device_screen_no_devices.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无设备'**
+  String get device_screen_no_devices;
+
+  /// No description provided for @device_screen_manage_groups.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理分组'**
+  String get device_screen_manage_groups;
+
+  /// No description provided for @device_form_group.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备分组'**
+  String get device_form_group;
+
+  /// No description provided for @device_group_ungrouped.
+  ///
+  /// In zh, this message translates to:
+  /// **'未分组'**
+  String get device_group_ungrouped;
+
+  /// No description provided for @group_manage_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'分组管理'**
+  String get group_manage_title;
+
+  /// No description provided for @group_manage_new_group.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建分组'**
+  String get group_manage_new_group;
+
+  /// No description provided for @group_manage_rename.
+  ///
+  /// In zh, this message translates to:
+  /// **'重命名'**
+  String get group_manage_rename;
+
+  /// No description provided for @group_manage_delete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get group_manage_delete;
+
+  /// No description provided for @group_manage_empty.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有分组\n点击下方按钮新建一个吧'**
+  String get group_manage_empty;
+
+  /// No description provided for @group_manage_name_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入分组名称'**
+  String get group_manage_name_hint;
+
+  /// No description provided for @group_manage_name_empty.
+  ///
+  /// In zh, this message translates to:
+  /// **'分组名称不能为空'**
+  String get group_manage_name_empty;
+
+  /// No description provided for @group_manage_name_duplicate.
+  ///
+  /// In zh, this message translates to:
+  /// **'该分组名称已存在'**
+  String get group_manage_name_duplicate;
+
+  /// No description provided for @group_manage_delete_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除分组'**
+  String get group_manage_delete_title;
+
+  /// No description provided for @group_manage_delete_message.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除「{name}」吗？组内 {count} 台设备将变为未分组。'**
+  String group_manage_delete_message(String name, int count);
+
+  /// No description provided for @group_manage_device_count.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 台设备'**
+  String group_manage_device_count(int count);
+
+  /// No description provided for @group_manage_operation_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'操作失败，请重试'**
+  String get group_manage_operation_failed;
+
   /// No description provided for @profile_screen_personal_info.
   ///
   /// In zh, this message translates to:

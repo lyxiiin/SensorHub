@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
+import 'package:sensor_hub/ui/device/widgets/group_management_page.dart';
 import 'package:sensor_hub/ui/device_detail/widgets/device_detail_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/theme_selection_page.dart';
 import 'package:sensor_hub/ui/profile/widgets/units_conversion_page.dart';
@@ -25,6 +26,8 @@ class Routes{
         return pageRoute(UnitsConversionPage());
       case RoutePath.deviceRegistrationFrom:
         return pageRoute(DeviceRegistrationFormPage(), settings: setting);
+      case RoutePath.groupManagement:
+        return pageRoute(GroupManagementPage(), settings: setting);
       case RoutePath.deviceDetail:
         final deviceId = setting.arguments as int;
         return pageRoute(
@@ -76,6 +79,9 @@ class RoutePath{
 
   //
   static const String deviceRegistrationFrom = "DeviceRegistrationFromPage";
+
+  // 分组管理页
+  static const String groupManagement = "GroupManagementPage";
 
   // 设备详情页
   static const String deviceDetail = "DeviceDetailPage";

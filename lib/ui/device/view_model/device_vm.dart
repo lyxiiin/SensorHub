@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/widgets.dart';
+import 'package:sensor_hub/data/models/device_group.dart';
+import 'package:sensor_hub/data/repositories/device_repository.dart';
 import 'package:sensor_hub/data/repositories/mqtt_repository.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
@@ -20,8 +22,8 @@ class DeviceVM with ChangeNotifier {
   int get deviceCount => latestReadings.length;
   final Map<String, MqttService> _services = {};
   final Map<String, DeviceProfile> deviceProfiles = {}; // 设备名 → 配置
-  final Map<String, Map<SensorType, Measurement>> latestReadings =
-      {}; // 设备名 → (传感器类型 → 最新读数)
+  final Map<String, Map<SensorType, Measurement>> latestReadings = {}; // 设备名 → (传感器类型 → 最新读数)
+  List<DeviceGroup> groups = [];
   bool isLoading = false;
   bool _initializing = false;
 
@@ -41,6 +43,7 @@ class DeviceVM with ChangeNotifier {
           logW('设备连接超时，已加载的设备将正常显示，未完成的连接将在后台继续', tag: 'DeviceVM');
         },
       );
+      groups = await DeviceRepository().getAllGroups();
     } catch (e) {
       logE('初始化错误: $e', error: e, tag: 'DeviceVM');
     } finally {
@@ -57,17 +60,135 @@ class DeviceVM with ChangeNotifier {
     logD('发布消息到主题: $topic, payload长度: ${payload.length}', tag: 'DeviceVM');
   }
 
-  // 使用 host:port 作为唯一 key
-  MqttService getService(String host, int port) {
-    final key = '$host:$port';
+  // ================= 分组管理 =================
+  //
+  // 所有方法都遵循同一约定：数据库成功后同步内存 groups（必要时连带
+  // deviceProfiles），最后 notifyListeners —— 设备列表筛选菜单、卡片分组
+  // 标签、注册表单下拉都消费同一份 VM 状态，会自动跟着刷新。
+
+  /// 新建分组；名称为空或已存在时返回 false。
+  ///
+  /// 内存查重覆盖正常路径，数据库的 UNIQUE 约束兜住并发写入。
+  Future<bool> addGroup(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return false;
+    if (groups.any((g) => g.groupName == trimmed)) {
+      logW('新建分组失败: 名称已存在 ($trimmed)', tag: 'DeviceVM');
+      return false;
+    }
+    try {
+      final group = await DeviceRepository().addGroup(trimmed);
+      // 挂到列表末尾（sortOrder 即为此意），不破坏既有顺序
+      groups = [...groups, group];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      logE('新建分组失败: $e', error: e, tag: 'DeviceVM');
+      return false;
+    }
+  }
+
+  /// 重命名分组；新名称为空或与其他分组重名时返回 false。
+  Future<bool> renameGroup(DeviceGroup group, String newName) async {
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) return false;
+    final duplicated = groups.any(
+      (g) => g.groupId != group.groupId && g.groupName == trimmed,
+    );
+    if (duplicated) {
+      logW('重命名分组失败: 名称已存在 ($trimmed)', tag: 'DeviceVM');
+      return false;
+    }
+    try {
+      await DeviceRepository().renameGroup(group, trimmed);
+      groups = groups
+          .map((g) => g.groupId == group.groupId
+              ? g.copyWith(groupName: trimmed)
+              : g)
+          .toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      logE('重命名分组失败: $e', error: e, tag: 'DeviceVM');
+      return false;
+    }
+  }
+
+  /// 按拖拽后的新顺序持久化 sortOrder（列表下标即新排序值）。
+  Future<bool> reorderGroups(List<DeviceGroup> orderedGroups) async {
+    try {
+      await DeviceRepository().reorderGroups(orderedGroups);
+      groups = [
+        for (int i = 0; i < orderedGroups.length; i++)
+          orderedGroups[i].copyWith(sortOrder: i),
+      ];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      logE('分组重排失败: $e', error: e, tag: 'DeviceVM');
+      return false;
+    }
+  }
+
+  /// 删除分组。组内设备转为未分组：
+  /// 数据库侧由外键 ON DELETE SET NULL 完成，
+  /// 内存侧把对应 deviceProfiles 的 groupId 置 null。
+  Future<bool> deleteGroup(int groupId) async {
+    try {
+      await DeviceRepository().deleteGroup(groupId);
+      groups = groups.where((g) => g.groupId != groupId).toList();
+      for (final entry in deviceProfiles.entries) {
+        if (entry.value.groupId == groupId) {
+          final p = entry.value;
+          // DeviceProfile 没有 copyWith，手动重建并保留其余字段
+          deviceProfiles[entry.key] = DeviceProfile(
+            configId: p.configId,
+            deviceName: p.deviceName,
+            sensors: p.sensors,
+            thresholds: p.thresholds,
+            payloadVersion: p.payloadVersion,
+            groupId: null,
+          );
+        }
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      logE('删除分组失败: $e', error: e, tag: 'DeviceVM');
+      return false;
+    }
+  }
+
+  // 使用 broker:port:clientId 作为唯一 key：每个连接身份独享一条连接，
+  // 改凭据/换 broker 时拆旧建新，互不影响其他设备
+  String _serviceKey(String broker, int port, String clientId) =>
+      '$broker:$port:$clientId';
+
+  MqttService getService(String host, int port, String clientId) {
+    final key = _serviceKey(host, port, clientId);
     return _services.putIfAbsent(key, () => MqttService());
   }
 
-  void removeService(String host, int port) {
-    final key = '$host:$port';
+  void removeService(String host, int port, String clientId) {
+    final key = _serviceKey(host, port, clientId);
     final service = _services.remove(key);
     service?.disconnect();
     notifyListeners();
+  }
+
+  /// 是否还有其他设备使用同一连接身份（broker:port:clientId）
+  Future<bool> _othersUsingService(
+    int? excludeConfigId,
+    String broker,
+    int port,
+    String clientId,
+  ) async {
+    final configs = await _configDao.getAll();
+    return configs.any((c) =>
+        c.configId != excludeConfigId &&
+        c.broker == broker &&
+        c.port == port &&
+        c.clientId == clientId);
   }
 
   /// 删除设备：从内存缓存与数据库中移除，并断开无其他设备使用的 MQTT 连接
@@ -92,15 +213,16 @@ class DeviceVM with ChangeNotifier {
     latestReadings.remove(config.deviceName);
     deviceProfiles.remove(config.deviceName);
 
-    // 若无其他设备使用同一 broker，断开该连接
+    // 连接按 broker:port:clientId 独享：没有其他设备共用同一身份时才断开
     final stillUsed = configs.any(
       (c) =>
           c.configId != configId &&
           c.broker == config.broker &&
-          c.port == config.port,
+          c.port == config.port &&
+          c.clientId == config.clientId,
     );
     if (!stillUsed) {
-      removeService(config.broker, config.port);
+      removeService(config.broker, config.port, config.clientId);
     }
 
     await _mqttRepository.deleteDevice(config.clientId, configId);
@@ -126,6 +248,7 @@ class DeviceVM with ChangeNotifier {
           deviceName: deviceConfig.deviceName,
           sensors: latest.keys.toList(),
           payloadVersion: 1,
+          groupId: deviceConfig.groupId,
         );
       } else {
         logW(
@@ -149,7 +272,8 @@ class DeviceVM with ChangeNotifier {
   }
 
   Future<void> connectDeviceToMqtt(DeviceConfig deviceConfig) async {
-    final broker1 = getService(deviceConfig.broker, deviceConfig.port);
+    final broker1 =
+        getService(deviceConfig.broker, deviceConfig.port, deviceConfig.clientId);
     await broker1.connect(
       host: deviceConfig.broker,
       port: deviceConfig.port,
@@ -158,11 +282,7 @@ class DeviceVM with ChangeNotifier {
       password: deviceConfig.password,
     );
 
-    // 检查是否已经存在对该主题的订阅，如果有则先取消
-    if (broker1.isSubscribed(deviceConfig.upTopic)) {
-      broker1.unsubscribe(deviceConfig.upTopic);
-    }
-
+    // subscribe 为替换语义：同 topic 重复订阅只会更新回调，无需先退订
     broker1.subscribe(deviceConfig.upTopic, (topic, payload) async {
       // SDTP 协议：payload 是十六进制编码的字符串
       try {
@@ -196,6 +316,7 @@ class DeviceVM with ChangeNotifier {
     required String username,
     required String password,
     required String macAddress,
+    int? groupId
   }) async {
     isLoading = true;
     notifyListeners();
@@ -225,6 +346,7 @@ class DeviceVM with ChangeNotifier {
           username: username,
           password: password,
           macAddress: macAddress,
+          groupId: groupId,
         ),
       );
 
@@ -240,10 +362,15 @@ class DeviceVM with ChangeNotifier {
         username: username,
         password: password,
         macAddress: macAddress,
+        groupId: groupId
       );
 
       // 获取或创建 MQTT 服务实例
-      final broker1 = getService(deviceConfig.broker, deviceConfig.port);
+      final broker1 = getService(
+        deviceConfig.broker,
+        deviceConfig.port,
+        deviceConfig.clientId,
+      );
 
       // 尝试连接 MQTT
       await broker1.connect(
@@ -257,22 +384,24 @@ class DeviceVM with ChangeNotifier {
       if (!broker1.isConnected) {
         logE('MQTT 连接失败，无法添加设备: $effectiveName', tag: 'DeviceVM');
         await _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
+        // 独享连接失败后及时拆除，避免留下无限重连的孤儿服务
+        if (!await _othersUsingService(
+            configId, broker, port, effectiveClientId)) {
+          removeService(broker, port, effectiveClientId);
+        }
         return false;
       }
-      latestReadings[effectiveName] = {};
+      latestReadings[deviceConfig.deviceName] = {};
       // 同步创建 profile，保证设备列表可正常渲染（收到首条数据后 _autoDetectProfile 会补充传感器）
-      deviceProfiles[effectiveName] = DeviceProfile(
-        configId: configId,
-        deviceName: effectiveName,
+      deviceProfiles[deviceConfig.deviceName] = DeviceProfile(
+        configId: deviceConfig.configId!,
+        deviceName: deviceConfig.deviceName,
         sensors: const [],
         payloadVersion: 1,
+        groupId: deviceConfig.groupId
       );
 
-      // 检查是否已经存在对该主题的订阅，如果有则先取消
-      if (broker1.isSubscribed(deviceConfig.upTopic)) {
-        broker1.unsubscribe(deviceConfig.upTopic);
-      }
-
+      // subscribe 为替换语义：同 topic 重复订阅只会更新回调，无需先退订
       broker1.subscribe(deviceConfig.upTopic, (topic, payload) async {
         try {
           await _handleSdtpMessage(deviceConfig, payload);
@@ -310,11 +439,16 @@ class DeviceVM with ChangeNotifier {
       removeListener(listener);
 
       if (result == false) {
-        _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
+        await _mqttRepository.deleteDevice(deviceConfig.clientId, configId);
         deviceProfiles.remove(effectiveName);
         latestReadings.remove(effectiveName);
-        broker1.unsubscribe(deviceConfig.upTopic);
-        broker1.disconnect();
+        // 回滚连接：独享身份无人共用时整条拆掉；被共用时仅退订自己的 topic
+        if (!await _othersUsingService(
+            configId, broker, port, effectiveClientId)) {
+          removeService(broker, port, effectiveClientId);
+        } else {
+          broker1.unsubscribe(deviceConfig.upTopic);
+        }
       }
       return result;
     } catch (e, stack) {
@@ -385,7 +519,7 @@ class DeviceVM with ChangeNotifier {
   /// 向设备发送 SDTP 命令
   Future<void> sendCommand(DeviceConfig config, List<int> payload) async {
     try {
-      final broker1 = getService(config.broker, config.port);
+      final broker1 = getService(config.broker, config.port, config.clientId);
       // 仅在未连接时才尝试建立连接，避免重复 connect 导致断开
       if (!broker1.isConnected) {
         await broker1.connect(
@@ -412,7 +546,7 @@ class DeviceVM with ChangeNotifier {
     required List<int> payload,
   }) async {
     try {
-      final broker1 = getService(config.broker, config.port);
+      final broker1 = getService(config.broker, config.port, config.clientId);
       // 仅在未连接时才尝试建立连接，避免重复 connect 导致断开
       if (!broker1.isConnected) {
         await broker1.connect(
@@ -465,6 +599,7 @@ class DeviceVM with ChangeNotifier {
         deviceName: deviceName,
         sensors: detectedSensors.toList(),
         payloadVersion: 1,
+        groupId: config.groupId,
       );
       logI('自动检测设备 $deviceName 传感器: $detectedSensors', tag: 'DeviceVM');
       return;
@@ -482,6 +617,7 @@ class DeviceVM with ChangeNotifier {
         sensors: detectedSensors.toList(),
         payloadVersion: existingProfile.payloadVersion,
         thresholds: existingProfile.thresholds, // 保留已配置的阈值
+        groupId: existingProfile.groupId, // 保留分组归属
       );
 
       if (newSensors.isNotEmpty) {
@@ -521,5 +657,73 @@ class DeviceVM with ChangeNotifier {
         // TODO: 触发 NotificationVM 刷新
       }
     }
+  }
+
+  Future<bool> updateDevice(DeviceConfig updated) async {
+    try {
+      final dao = DeviceConfigDao();
+      final old = await dao.getById(updated.configId!);
+      if (old == null) {
+        // 记录已不存在（可能已被删除）：拒绝更新，避免内存/连接状态错乱
+        logW('更新设备失败: configId=${updated.configId} 在数据库中不存在', tag: 'DeviceVM');
+        return false;
+      }
+      await dao.update(updated);
+
+      // 旧设备名唯一事实来源：更新前从数据库读出的 old
+      final oldName = old.deviceName;
+      final profile = deviceProfiles.remove(oldName);
+      if(profile != null){
+        deviceProfiles[updated.deviceName] = DeviceProfile(
+          configId: updated.configId!,
+          deviceName: updated.deviceName,
+          sensors: profile.sensors,
+          thresholds: profile.thresholds,
+          payloadVersion: profile.payloadVersion,
+          groupId: updated.groupId,
+        );
+      }
+      latestReadings[updated.deviceName] = latestReadings.remove(oldName) ?? {};
+      await _reconcileMqtt(old, updated);
+      notifyListeners();
+      return true;
+    } catch (e, s) {
+      logE('更新设备失败: $e', error: e, stack: s, tag: 'DeviceVM');
+      return false;
+    }
+
+  }
+  /// 配置变更后的 MQTT 协调：连接身份（broker:port:clientId+凭据）没变就
+  /// 地换订阅；变了就拆旧 key、建新 key。连接按身份独享，不再波及邻居。
+  Future<void> _reconcileMqtt(DeviceConfig old, DeviceConfig updated) async {
+    final sameIdentity = old.broker == updated.broker &&
+        old.port == updated.port &&
+        old.clientId == updated.clientId &&
+        old.username == updated.username &&
+        old.password == updated.password;
+
+    // ── 情况1：连接身份没变 → 就地换订阅，不断线 ──
+    if (sameIdentity) {
+      final svc = getService(
+        updated.broker,
+        updated.port,
+        updated.clientId,
+      );
+      if (old.upTopic != updated.upTopic) {
+        svc.unsubscribe(old.upTopic); // 本设备独享连接，退订不伤邻居
+      }
+      await connectDeviceToMqtt(updated); // 复用连接、换闭包（改名也走这里）
+      return;
+    }
+
+    // ── 情况2：连接身份变了（含同 broker 改 clientId/凭据）→ 拆旧建新 ──
+    // 旧 key 没被其他设备共用时整条断开（防御同 clientId 的重复配置）
+    final oldSvc = _services[_serviceKey(old.broker, old.port, old.clientId)];
+    oldSvc?.unsubscribe(old.upTopic);
+    if (!await _othersUsingService(
+        old.configId, old.broker, old.port, old.clientId)) {
+      removeService(old.broker, old.port, old.clientId);
+    }
+    await connectDeviceToMqtt(updated);
   }
 }

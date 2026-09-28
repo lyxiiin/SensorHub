@@ -45,6 +45,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get device_screen_minutes_ago => 'minutes ago';
 
   @override
+  String get device_screen_all_devices => 'All Devices';
+
+  @override
+  String get device_screen_group_empty => 'No devices in this group';
+
+  @override
+  String get device_screen_ungrouped_empty => 'No ungrouped devices';
+
+  @override
+  String get device_screen_no_devices => 'No devices';
+
+  @override
+  String get device_screen_manage_groups => 'Manage Groups';
+
+  @override
+  String get device_form_group => 'Device Group';
+
+  @override
+  String get device_group_ungrouped => 'Ungrouped';
+
+  @override
+  String get group_manage_title => 'Manage Groups';
+
+  @override
+  String get group_manage_new_group => 'New Group';
+
+  @override
+  String get group_manage_rename => 'Rename';
+
+  @override
+  String get group_manage_delete => 'Delete';
+
+  @override
+  String get group_manage_empty =>
+      'No groups yet\nTap the button below to create one';
+
+  @override
+  String get group_manage_name_hint => 'Enter group name';
+
+  @override
+  String get group_manage_name_empty => 'Group name cannot be empty';
+
+  @override
+  String get group_manage_name_duplicate => 'This group name already exists';
+
+  @override
+  String get group_manage_delete_title => 'Delete Group';
+
+  @override
+  String group_manage_delete_message(String name, int count) {
+    return 'Delete \"$name\"? $count device(s) in it will become ungrouped.';
+  }
+
+  @override
+  String group_manage_device_count(int count) {
+    return '$count devices';
+  }
+
+  @override
+  String get group_manage_operation_failed => 'Operation failed, please retry';
+
+  @override
   String get profile_screen_personal_info => 'Personal Info';
 
   @override

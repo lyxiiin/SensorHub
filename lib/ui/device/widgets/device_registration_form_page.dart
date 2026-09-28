@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
-import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
+import 'package:sensor_hub/data/models/device_group.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../route/routes.dart';
 
 class DeviceRegistrationFormPage extends StatefulWidget {
@@ -30,6 +31,16 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
   late final TextEditingController _downTopicController;
   late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
+
+  /// 分组选择器的选中值；null = 未分组。
+  ///
+  /// 这里可以放心用 null 表示"未分组"，和设备列表页不同：
+  /// DropdownButton 把选中值包在 _DropdownRouteResult 里 pop 出来，
+  /// 只对"整个结果"判空，所以 value: null 的项被点中时 onChanged(null)
+  /// 会正常触发；而 PopupMenuButton 直接对返回值判空，
+  /// null 会被当成"用户关掉了菜单"，这就是列表页要用哨兵的原因。
+  int? _selectedGroupId;
+
   bool _showAdvanced = false;
   //防止重复调用
   bool _isSubmitting = false;
@@ -44,8 +55,16 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
   DeviceConfig? _deviceConfig;
   bool _routeArgsResolved = false;
 
+  late DeviceVM viewModel;
+
   /// 是否为编辑已有设备
   bool get _isEditMode => _deviceConfig != null;
+  
+  @override
+  void initState() {
+    super.initState();
+    viewModel = context.read<DeviceVM>();
+  }
 
   @override
   void didChangeDependencies() {
@@ -68,6 +87,8 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
     _passwordController = TextEditingController(text: config?.password ?? '');
     // 已有 clientId 时展开高级设置，便于确认
     _showAdvanced = config?.clientId.isNotEmpty ?? false;
+    // 编辑态回填分组；新增时保持 null（未分组）
+    _selectedGroupId = config?.groupId;
   }
 
   @override
@@ -131,6 +152,16 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                       return null;
                     },
                     keyboardType: TextInputType.text,
+                  ),
+
+                  SizedBox(height: 16.h),
+
+                  // 设备分组选择器。
+                  // 选项来自 DeviceVM.groups（与设备列表页同一个数据源）；
+                  // 包一层 Consumer，保证 initData 异步加载完分组后选项会自动出现。
+                  Consumer<DeviceVM>(
+                    builder: (context, vm, child) =>
+                        _buildGroupDropdown(vm.groups),
                   ),
 
                   SizedBox(height: 16.h),
@@ -329,6 +360,76 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
     });
   }
 
+  /// 设备分组选择器
+  ///
+  /// 用 DropdownButtonFormField 而不是 DropdownMenu：它在 Form 内部，
+  /// 需要和 TextFormField 一模一样的外框与内边距，
+  /// DropdownMenu 那种"输入框 + 菜单"的混合外观对不齐。
+  ///
+  /// 分组按 sortOrder 优先、groupId 兜底展示 —— 与设备列表筛选菜单
+  /// 的排序规则保持一致（VM.groups 可能被测试塞进乱序数据，显式排一次）。
+  Widget _buildGroupDropdown(List<DeviceGroup> groups) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appText = AppLocalizations.of(context);
+    final borderRadius = BorderRadius.circular(8.r);
+    final outlineBorder = OutlineInputBorder(
+      borderRadius: borderRadius,
+      borderSide: BorderSide(color: colorScheme.outline),
+    );
+
+    final sortedGroups = [...groups]..sort((a, b) {
+        final bySort = a.sortOrder.compareTo(b.sortOrder);
+        if (bySort != 0) return bySort;
+        return (a.groupId ?? 0).compareTo(b.groupId ?? 0);
+      });
+
+    // 只把"确实存在于选项里"的 id 交给 DropdownButton。
+    // 它的 _updateSelectedIndex() 里有
+    //   assert(items.where((i) => i.value == value).length == 1)
+    // 一旦传入的 id 找不到对应 item（例如分组已被删除），debug 下直接断言失败。
+    final selection = sortedGroups.any((g) => g.groupId == _selectedGroupId)
+        ? _selectedGroupId
+        : null;
+
+    return DropdownButtonFormField<int?>(
+      // 用 initialValue：value 从 3.33 起已废弃
+      initialValue: selection,
+      isExpanded: true,
+      icon: Icon(Icons.expand_more, color: colorScheme.onSurfaceVariant),
+      // 由 DropdownButtonFormField 转发给内部 DropdownButton，
+      // 保证选中项文案与 _buildTextField 的输入文案同字号
+      style: theme.textTheme.bodyLarge,
+      decoration: InputDecoration(
+        labelText: appText.device_form_group,
+        border: outlineBorder,
+        enabledBorder: outlineBorder,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: colorScheme.primary, width: 2.0),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      ),
+      items: [
+        // 「未分组」必须做成一个真实的、value 为 null 的 item，而不是只靠 hint：
+        // DropdownButton 仅在"没有任何 item 的 value 等于当前值"时才退回 hint。
+        // 有这个 item 时，value == null 会被当作选中项正常渲染成"未分组"，
+        // 同时 isEmpty 变为 false，浮动 label 也会正确上浮到边框上。
+        DropdownMenuItem<int?>(
+          value: null,
+          child: Text(appText.device_group_ungrouped),
+        ),
+        ...sortedGroups.map(
+          (group) => DropdownMenuItem<int?>(
+            value: group.groupId,
+            child: Text(group.groupName, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+      ],
+      onChanged: (value) => setState(() => _selectedGroupId = value),
+    );
+  }
+
   /// 构建输入框的通用方法
   ///
   /// 主题统一在方法内部读取（单一来源），调用处不再传 colorScheme。
@@ -416,14 +517,21 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
       macAddress: macAddress.isEmpty ? original.macAddress : macAddress,
+      // groupId 不在表单里，必须沿用原值：
+      // toMap() 里会带上 'groupId'，漏传就等于把已有分组清空
+      groupId: _selectedGroupId,
     );
 
     try {
-      await DeviceConfigDao().update(updated);
+      final ok = await viewModel.updateDevice(updated);
       if (!mounted) return;
-      showToast("设备配置已更新");
-      // 回传 true，详情页据此刷新设备名与概览信息
-      RouteUtils.popOfData<bool>(context, data: true);
+      if (ok) {
+        showToast("设备配置已更新");
+        // 回传 true，详情页据此刷新设备名与概览信息
+        RouteUtils.popOfData<bool>(context, data: true);
+      } else {
+        showToast("设备配置更新失败，请重试");
+      }
     } catch (e) {
       logE('更新设备配置失败: $e', error: e, tag: 'DeviceRegistrationFormPage');
       if (mounted) showToast('$e');
@@ -446,6 +554,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       downTopic: _downTopicController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
+      groupId: _selectedGroupId,
     );
     if (!mounted) return;
     if (res) {
@@ -454,4 +563,6 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       showToast("注册设备失败");
     }
   }
+
+
 }

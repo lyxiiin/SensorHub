@@ -37,6 +37,9 @@ class DeviceInfoCard extends StatelessWidget{
   final String? icon;
   final String? name;
   final String? time;
+
+  /// 设备所属分组名；为空表示未分组，不渲染标签
+  final String? groupName;
   final Map<SensorType,dynamic> dateList;
   final GestureTapCallback? onTap;
   const DeviceInfoCard({
@@ -45,6 +48,7 @@ class DeviceInfoCard extends StatelessWidget{
     this.icon,
     this.name,
     this.time,
+    this.groupName,
     required this.dateList,
     this.onTap
   });
@@ -88,6 +92,32 @@ class DeviceInfoCard extends StatelessWidget{
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (groupName != null && groupName!.isNotEmpty) ...[
+                      SizedBox(width: 6.w),
+                      // 分组标签。宽度封顶 + 省略号：设备名是 Flexible，
+                      // 长名字会先让位，标签不会把整行撑破
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: 84.w),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            groupName!,
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              color: colorScheme.onSecondaryContainer,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 Text(
