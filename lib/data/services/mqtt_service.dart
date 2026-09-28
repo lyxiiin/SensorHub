@@ -19,6 +19,10 @@ class MqttService {
   Stream<bool> get connectionStatusStream =>
       _connectionStatusController!.stream;
 
+  /// 在途连接的共享 Future（单飞）：并发调用 connect() 时，
+  /// 后来者等待同一次连接完成，而不是立即返回假装成功。
+  Future<void>? _connectingFuture;
+
   // 初始化连接
   Future<void> connect({
     required String host,
@@ -34,14 +38,16 @@ class MqttService {
     _autoReconnect = autoReconnect;
     _reconnectDelay = reconnectDelay;
 
-    // 如果已经连接或正在连接中，直接复用
+    // 如果已经连接，直接复用
     if (isConnected) {
-      logD('复用现有连接', tag: 'MQTT');
       return;
     }
-    if (_isConnecting) {
+    // 单飞：在途连接返回同一个 Future，让后来者真正等待完成
+    // （注意：连接参数以首次发起的调用为准）
+    final pending = _connectingFuture;
+    if (pending != null) {
       logD('正在连接中，等待完成', tag: 'MQTT');
-      return;
+      return pending;
     }
 
     _client = MqttServerClient(host, clientId ?? 'flutter_client_${DateTime.now().millisecondsSinceEpoch}');
@@ -66,28 +72,37 @@ class MqttService {
     await _doConnect();
   }
 
-  bool _isConnecting = false;
-
-  Future<void> _doConnect() async {
-    // 防止重复连接：已连接或正在连接中时跳过
+  Future<void> _doConnect() {
+    // 防止重复连接：已连接或正在连接中时，复用同一个 Future
     if (isConnected) {
-      return;
+      return Future.value();
     }
-    if (_isConnecting) {
-      return;
+    final pending = _connectingFuture;
+    if (pending != null) {
+      return pending;
     }
-    _isConnecting = true;
-    try {
-      await _client.connect();
-    } catch (e) {
-      logE('连接失败: $e', error: e, tag: 'MQTT');
-      _onDisconnected();
-      if (_autoReconnect) {
-        _scheduleReconnect();
+
+    // 用 Completer 实现“单飞”：无论入口是 connect() 还是重连定时器，
+    // 同一时刻只有一次真实连接，所有等待者共享同一个 Future。
+    final completer = Completer<void>();
+    _connectingFuture = completer.future;
+    () async {
+      try {
+        await _client.connect();
+        completer.complete();
+      } catch (e) {
+        logE('连接失败: $e', error: e, tag: 'MQTT');
+        _onDisconnected();
+        if (_autoReconnect) {
+          _scheduleReconnect();
+        }
+        // 吞掉异常：调用方统一通过 isConnected 判断连接结果（保持原有语义）
+        completer.complete();
+      } finally {
+        _connectingFuture = null;
       }
-    } finally {
-      _isConnecting = false;
-    }
+    }();
+    return completer.future;
   }
 
   void _onConnected() {
@@ -172,25 +187,23 @@ class MqttService {
 
   // 订阅 topic 并注册回调
   void subscribe(String topic, MqttMessageCallback callback) {
-    if (_client.connectionStatus?.state != MqttConnectionState.connected) {
-      logW('未连接，无法订阅 $topic', tag: 'MQTT');
-      return;
-    }
+    // 回调永远先登记（同 topic 重复订阅 = 替换回调，不叠加）
+    _topicCallbacks[topic] = callback;
 
-    if (_subscribedTopics.contains(topic)) {
-      // 已订阅，更新回调即可
-      _topicCallbacks[topic] = callback;
-      return;
-    }
+    if (_subscribedTopics.contains(topic)) return;
 
-    try {
-      _client.subscribe(topic, MqttQos.atLeastOnce);
-      _subscribedTopics.add(topic);
-      _topicCallbacks[topic] = callback;
-      logI('已订阅: $topic', tag: 'MQTT');
-    } catch (e) {
-      logE('订阅失败 $topic: $e', error: e, tag: 'MQTT');
+    if (_isClientConnected) {
+      try {
+        _client.subscribe(topic, MqttQos.atLeastOnce);
+        logI('已订阅: $topic', tag: 'MQTT');
+      } catch (e) {
+        logE('订阅失败 $topic: $e', error: e, tag: 'MQTT');
+      }
+    } else {
+      // 未连接：只登记意图，连接建立后由 _onConnected 的补订循环生效
+      logI('已登记订阅: $topic (连接建立后生效)', tag: 'MQTT');
     }
+    _subscribedTopics.add(topic);
   }
 
   // 检查是否已订阅指定主题
@@ -202,7 +215,7 @@ class MqttService {
   void unsubscribe(String topic) {
     if (!_subscribedTopics.contains(topic)) return;
 
-    if (_client.connectionStatus?.state == MqttConnectionState.connected) {
+    if (_isClientConnected) {
       _client.unsubscribe(topic);
     }
 
@@ -226,12 +239,15 @@ class MqttService {
     logI('已手动断开', tag: 'MQTT');
   }
 
-  // 获取当前连接状态
-  bool get isConnected {
+  // 安全的连接状态判断：_client 未初始化（late 字段）时返回 false 而不抛异常
+  bool get _isClientConnected {
     try {
       return _client.connectionStatus?.state == MqttConnectionState.connected;
     } catch (_) {
       return false; // _client 尚未初始化
     }
   }
+
+  // 获取当前连接状态
+  bool get isConnected => _isClientConnected;
 }
