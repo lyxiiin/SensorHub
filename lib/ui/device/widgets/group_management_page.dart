@@ -9,6 +9,7 @@ import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../core/ui/confirm_dialog.dart';
 import '../../core/ui/custom_app_bar.dart';
+import '../../core/ui/group_name_dialog.dart';
 
 /// 分组管理页：新建 / 重命名 / 拖拽排序 / 删除。
 ///
@@ -304,11 +305,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   }
 
   /// 名称输入对话框（新建 / 重命名共用），返回 null 表示取消。
-  ///
-  /// 必须是独立的 StatefulWidget：controller 要跟着 dialog 的 State 走
-  /// lifecycle，在 dispose() 里释放。若在 showDialog 的 await 之后立刻
-  /// dispose，退场动画还没播完的 TextField 仍在引用它，会抛
-  /// "used after being disposed"。
   Future<String?> _showNameDialog({
     required String title,
     String? initialName,
@@ -316,22 +312,20 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   }) async {
     final appText = AppLocalizations.of(context);
     final vm = context.read<DeviceVM>();
-    return showDialog<String>(
-      context: context,
-      builder: (dialogContext) => _GroupNameDialog(
-        title: title,
-        initialName: initialName,
-        hint: appText.group_manage_name_hint,
-        confirmLabel: appText.device_detail_confirm,
-        cancelLabel: appText.common_ui_cancel,
-        emptyError: appText.group_manage_name_empty,
-        duplicateError: appText.group_manage_name_duplicate,
-        // 重命名时排除自身，否则旧名本身就会被判为重名
-        existingNames: vm.groups
-            .where((g) => g.groupId != excludeGroupId)
-            .map((g) => g.groupName)
-            .toSet(),
-      ),
+    return showGroupNameDialog(
+      context,
+      title: title,
+      initialName: initialName,
+      hint: appText.group_manage_name_hint,
+      confirmLabel: appText.device_detail_confirm,
+      cancelLabel: appText.common_ui_cancel,
+      emptyError: appText.group_manage_name_empty,
+      duplicateError: appText.group_manage_name_duplicate,
+      // 重命名时排除自身，否则旧名本身就会被判为重名
+      existingNames: vm.groups
+          .where((g) => g.groupId != excludeGroupId)
+          .map((g) => g.groupName)
+          .toSet(),
     );
   }
 
@@ -355,104 +349,5 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     if (confirmed != true || !mounted) return;
     final ok = await vm.deleteGroup(group.groupId!);
     if (!ok && mounted) showToast(appText.group_manage_operation_failed);
-  }
-}
-
-/// 分组名称输入对话框（新建 / 重命名共用）。
-///
-/// 查重在对话框内完成（错误就地显示在输入框下方），
-/// 不合法时「确定」不关对话框。文案与查重所需数据全部由调用方注入，
-/// 组件自身不依赖 VM，保持可独立测试。
-class _GroupNameDialog extends StatefulWidget {
-  const _GroupNameDialog({
-    required this.title,
-    required this.hint,
-    required this.confirmLabel,
-    required this.cancelLabel,
-    required this.emptyError,
-    required this.duplicateError,
-    this.initialName,
-    this.existingNames = const <String>{},
-  });
-
-  final String title;
-  final String hint;
-  final String confirmLabel;
-  final String cancelLabel;
-  final String emptyError;
-  final String duplicateError;
-  final String? initialName;
-  final Set<String> existingNames;
-
-  @override
-  State<_GroupNameDialog> createState() => _GroupNameDialogState();
-}
-
-class _GroupNameDialogState extends State<_GroupNameDialog> {
-  late final TextEditingController _controller;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialName ?? '');
-  }
-
-  @override
-  void dispose() {
-    // controller 只能在这里释放：dialog 路由完全移除（含退场动画）后
-    // State.dispose 才执行，此时 TextField 已不再引用它
-    _controller.dispose();
-    super.dispose();
-  }
-
-  String? _validate() {
-    final value = _controller.text.trim();
-    if (value.isEmpty) return widget.emptyError;
-    if (widget.existingNames.contains(value)) return widget.duplicateError;
-    return null;
-  }
-
-  void _submit() {
-    final error = _validate();
-    if (error != null) {
-      setState(() => _error = error);
-      return;
-    }
-    Navigator.of(context).pop(_controller.text.trim());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.title),
-      content: TextField(
-        key: const ValueKey('group-name-field'),
-        controller: _controller,
-        autofocus: true,
-        maxLength: 20,
-        decoration: InputDecoration(
-          hintText: widget.hint,
-          errorText: _error,
-        ),
-        // 输入即清错：不要让上一次的错误一直挂在框上
-        onChanged: (_) {
-          if (_error != null) setState(() => _error = null);
-        },
-        onSubmitted: (_) => _submit(),
-      ),
-      actions: [
-        TextButton(
-          key: const ValueKey('group-dialog-cancel'),
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(widget.cancelLabel),
-        ),
-        FilledButton(
-          key: const ValueKey('group-dialog-confirm'),
-          onPressed: _submit,
-          child: Text(widget.confirmLabel),
-        ),
-      ],
-    );
   }
 }

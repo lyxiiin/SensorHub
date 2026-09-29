@@ -6,7 +6,7 @@ import '../../../l10n/app_localizations.dart';
 ///
 /// 只负责「询问 → 返回用户决定」这一层 UI：确认后的业务操作、
 /// toast、导航全部留在调用方。文案由调用方注入，组件不依赖 VM，
-/// 与 _GroupNameDialog 保持同一设计约定（可独立测试）。
+/// 与 GroupNameDialog 保持同一设计约定（可独立测试）。
 ///
 /// [destructive] 为 true（默认）时确认按钮使用错误色，用于删除等
 /// 不可逆操作。返回 true 表示用户确认；取消或点空白关闭返回
