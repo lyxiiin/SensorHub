@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../core/i18n/sensor_type_l10n.dart';
 
 /// A sensor data card displayed in a 2-column GridView.
 ///
@@ -104,14 +105,14 @@ class _SensorHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final badgeColor = Color(sensor.iconColor);
+    final l10n = AppLocalizations.of(context);
 
     return Row(
       children: [
         Container(
           padding: EdgeInsets.all(DeviceInfoSection._iconContainerPadding.w),
           decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.15),
+            color: Color(sensor.iconColor).withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(
               DeviceInfoSection._iconContainerRadius.r,
             ),
@@ -120,7 +121,7 @@ class _SensorHeader extends StatelessWidget {
             sensor.icon,
             width: DeviceInfoSection._sensorIconSize.w,
             height: DeviceInfoSection._sensorIconSize.w,
-            colorFilter: ColorFilter.mode(badgeColor, BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(Color(sensor.iconColor), BlendMode.srcIn),
           ),
         ),
         SizedBox(width: DeviceInfoSection._iconNameGap.w),
@@ -129,7 +130,7 @@ class _SensorHeader extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              sensor.displayName,
+              sensor.localizedName(l10n),
               maxLines: 1,
               softWrap: false,
               style: TextStyle(

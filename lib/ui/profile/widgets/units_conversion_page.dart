@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sensor_hub/ui/core/ui/setting_item.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../route/route_utils.dart';
 import '../../core/ui/custom_app_bar.dart';
@@ -25,7 +23,7 @@ class _UnitsConversionPageState extends State<UnitsConversionPage>{
       extendBody: true,
       backgroundColor: colorScheme.surface,
       appBar: createAppBar(
-        title: '读数单位',
+        title: appText.units_page_title,
         colorScheme: colorScheme,
         appText: appText,
         onBack: () {

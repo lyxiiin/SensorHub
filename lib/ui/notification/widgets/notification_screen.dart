@@ -1,39 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/models/notification_message.dart';
-import 'package:sensor_hub/data/services/mqtt_service.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/ui/core/ui/title_bar.dart';
 import 'package:sensor_hub/ui/notification/view_model/notification_vm.dart';
 
-const Map<int, String> sensorType = {
-  0x01: "🌡️ 温度",
-  0x02: "💧 湿度",
-  0x05: "🌬️ 气压",               // 或 📉（但🌬️更自然）
-  0x06: "🧲 霍尔",               // 霍尔传感器常用于磁感应
-  0x07: "🧍 人体活动",
-  0x0A: "☀️ 光感",
-  0x0B: "🫁 CO2(%)",             // 呼吸/空气质量相关
-  0x0C: "🌫️ PM2.5",
-  0x0D: "🌫️ PM10",
-  0x12: "👃 VOC(index)",         // 挥发性有机物，嗅觉相关
-  0x13: "🔇 噪声",               // 或 📢，但 🔇 更强调“检测噪声”而非发出声音
-  0x14: "🔋 电量(%)",
-  0x15: "🫁 CO2(ppm)",           // 与 CO2(%) 统一风格
-  0x16: "🌫️ PM1.0",
-  0x17: "🌫️ PM4.0",
-  0x18: "🌫️ PM100",
-  0x19: "👃 VOC(ug/m³)",         // 单位修正为标准格式 µg/m³，但保留原写法也可
-  0x1A: "⚡️ 电量(mV)",           // 电压常用 ⚡，或 🔋 但已用于百分比
-  0xFF: "❔ 未知"
+/// 传感器类型的 emoji 图标（locale 无关）；
+/// 名称文案通过 [sensorTypeLabel] 按当前语言解析。
+const Map<int, String> sensorTypeEmoji = {
+  0x01: "🌡️",
+  0x02: "💧",
+  0x05: "🌬️",
+  0x06: "🧲",
+  0x07: "🧍",
+  0x0A: "☀️",
+  0x0B: "🫁",
+  0x0C: "🌫️",
+  0x0D: "🌫️",
+  0x12: "👃",
+  0x13: "🔇",
+  0x14: "🔋",
+  0x15: "🫁",
+  0x16: "🌫️",
+  0x17: "🌫️",
+  0x18: "🌫️",
+  0x19: "👃",
+  0x1A: "⚡️",
+  0xFF: "❔",
 };
+
+/// 按当前语言解析传感器类型名称（0xFF 为未知类型的兜底）。
+String sensorTypeLabel(int type, AppLocalizations l10n) {
+  switch (type) {
+    case 0x01: return l10n.notification_sensor_temperature;
+    case 0x02: return l10n.notification_sensor_humidity;
+    case 0x05: return l10n.notification_sensor_pressure;
+    case 0x06: return l10n.notification_sensor_hall;
+    case 0x07: return l10n.notification_sensor_human_activity;
+    case 0x0A: return l10n.notification_sensor_light;
+    case 0x0B: return l10n.notification_sensor_co2_percent;
+    case 0x0C: return l10n.notification_sensor_pm25;
+    case 0x0D: return l10n.notification_sensor_pm10;
+    case 0x12: return l10n.notification_sensor_voc_index;
+    case 0x13: return l10n.notification_sensor_noise;
+    case 0x14: return l10n.notification_sensor_battery_percent;
+    case 0x15: return l10n.notification_sensor_co2_ppm;
+    case 0x16: return l10n.notification_sensor_pm1;
+    case 0x17: return l10n.notification_sensor_pm4;
+    case 0x18: return l10n.notification_sensor_pm100;
+    case 0x19: return l10n.notification_sensor_voc_density;
+    case 0x1A: return l10n.notification_sensor_battery_mv;
+    default:   return l10n.notification_sensor_unknown;
+  }
+}
 
 const Map<int, String> sensorTypeUnit = {
   0x01: "℃",      // 温度
   0x02: "%",      // 湿度
-  0x05: "kPa",    // 气压（修正拼写）
+  0x05: "kPa",    // 气压
   0x06: "",       // 霍尔传感器通常输出开关信号或无量纲值，无标准单位
   0x07: "",       // 人体活动：通常为存在/活动状态，无单位
   0x0A: "lux",     // 光照强度单位：勒克斯（lux）
@@ -99,6 +126,7 @@ class _NotificationScreenContext extends StatelessWidget{
 
   Widget notificationList(ColorScheme colorScheme){
     return Consumer<NotificationVM>(builder: (context,vm,child){
+      final l10n = AppLocalizations.of(context);
       if(vm.notificationMessages.isEmpty){
         return SizedBox.expand(
           child: Column(
@@ -111,7 +139,7 @@ class _NotificationScreenContext extends StatelessWidget{
                 width: 100.w,
                 colorFilter: ColorFilter.mode(colorScheme.surfaceContainerHighest, BlendMode.srcIn),
               ),
-              Text("暂未收到消息",style: TextStyle(fontSize: 16.sp),textAlign: TextAlign.center,)
+              Text(l10n.notification_empty,style: TextStyle(fontSize: 16.sp),textAlign: TextAlign.center,)
             ],
           ),
         );
@@ -120,7 +148,11 @@ class _NotificationScreenContext extends StatelessWidget{
           padding: EdgeInsets.only(left: 12.w, right: 12.w, top: 12.h, bottom: 12.h),
           itemCount: vm.notificationMessages.length,
           itemBuilder: (context,index){
-            return notificationCard(item: vm.notificationMessages[index], colorScheme: colorScheme);
+            return notificationCard(
+              item: vm.notificationMessages[index],
+              colorScheme: colorScheme,
+              l10n: l10n,
+            );
           },
         );
       }
@@ -132,6 +164,7 @@ class _NotificationScreenContext extends StatelessWidget{
   Widget notificationCard({
     required NotificationMessage item,
     required ColorScheme colorScheme,
+    required AppLocalizations l10n,
   }) {
     // 根据 severity 映射颜色（可复用）
     Color indicatorColor = item.severity == 1
@@ -175,7 +208,7 @@ class _NotificationScreenContext extends StatelessWidget{
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: "超限",
+                          text: l10n.notification_over_limit,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
@@ -222,9 +255,10 @@ class _NotificationScreenContext extends StatelessWidget{
                 children: [
                   Expanded(
                     child: Text(
-                      "${sensorType[item.sensorType] ?? sensorType[0xFF]!}: "
+                      "${sensorTypeEmoji[item.sensorType] ?? sensorTypeEmoji[0xFF]!} "
+                          "${sensorTypeLabel(item.sensorType, l10n)}: "
                           "${restoreOriginalValue(item.sensorType, item.value)} "
-                          "${sensorTypeUnit[item.sensorType] ?? sensorType[0xFF]!}",
+                          "${sensorTypeUnit[item.sensorType] ?? sensorTypeUnit[0xFF]!}",
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w500,
@@ -242,7 +276,11 @@ class _NotificationScreenContext extends StatelessWidget{
 
               // --- 时间（弱化显示）---
               Text(
-                "发送时间: ${DateTime.fromMillisecondsSinceEpoch(item.datetime * 1000).toLocal()}",
+                l10n.notification_sent_time(
+                  DateFormat('yyyy-MM-dd HH:mm:ss').format(
+                    DateTime.fromMillisecondsSinceEpoch(item.datetime * 1000).toLocal(),
+                  ),
+                ),
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: colorScheme.onSurface.withOpacity(0.5),

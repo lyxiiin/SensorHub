@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
+import 'package:sensor_hub/data/dao/device_group_dao.dart';
 import 'package:sensor_hub/data/dao/measurement_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
+import 'package:sensor_hub/data/models/device_group.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
@@ -216,6 +218,9 @@ void main() {
 
       // AppBar 标题（未知设备兜底）
       expect(find.text('未知设备'), findsWidgets);
+      // 概览卡分组行：无设备配置 → 未分组兜底
+      expect(find.text('分组'), findsOneWidget);
+      expect(find.text('未分组'), findsOneWidget);
       // 分区标题
       expect(find.text('实时数据'), findsOneWidget);
       expect(find.text('历史趋势'), findsOneWidget);
@@ -234,6 +239,7 @@ void main() {
           config: DeviceConfig(
             configId: 1,
             deviceName: '环境监测站',
+            groupId: 3,
             broker: '127.0.0.1',
             port: 1883,
             clientId: 'c1',
@@ -242,6 +248,14 @@ void main() {
             username: 'u',
             password: 'p',
             macAddress: 'AABBCCDDEEFF',
+          ),
+        ),
+        groupDao: _FakeGroupDao(
+          group: DeviceGroup(
+            groupId: 3,
+            groupName: '车间A',
+            sortOrder: 0,
+            createdAt: 0,
           ),
         ),
         measurementDao: _FakeMeasurementDao(
@@ -291,9 +305,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 概览卡：设备名 + MAC + 在线状态
+      // 概览卡：设备名 + MAC + 分组 + 在线状态
       expect(find.text('环境监测站'), findsNWidgets(2)); // AppBar + 概览卡
       expect(find.textContaining('AABBCCDDEEFF'), findsOneWidget);
+      expect(find.text('车间A'), findsOneWidget);
       expect(find.text('在线'), findsOneWidget);
       // 传感器卡片
       expect(find.text('温度'), findsOneWidget);
@@ -301,6 +316,50 @@ void main() {
       expect(find.text('二氧化碳'), findsOneWidget);
       // 图表统计摘要（温度数据）
       expect(find.textContaining('31.00'), findsWidgets);
+    });
+
+    testWidgets('设备所属分组已被删除时兜底显示未分组', (tester) async {
+      usePhoneSurface(tester);
+      final vm = DeviceDetailVm(
+        configDao: _FakeConfigDao(
+          config: DeviceConfig(
+            configId: 1,
+            deviceName: '环境监测站',
+            groupId: 9, // 指向一个已不存在的分组
+            broker: '127.0.0.1',
+            port: 1883,
+            clientId: 'c1',
+            upTopic: 'env/AA/data',
+            downTopic: 'env/AA/cmd',
+            username: 'u',
+            password: 'p',
+            macAddress: 'AABBCCDDEEFF',
+          ),
+        ),
+        // 预置分组 id=3 ≠ 9 → getById 返回 null，模拟分组已被删除
+        groupDao: _FakeGroupDao(
+          group: DeviceGroup(
+            groupId: 3,
+            groupName: '车间A',
+            sortOrder: 0,
+            createdAt: 0,
+          ),
+        ),
+        measurementDao: _FakeMeasurementDao(),
+      );
+      await tester.pumpWidget(
+        wrap(
+          ChangeNotifierProvider.value(
+            value: vm,
+            child: const DeviceDetailPage(deviceId: 1),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 不显示已删除分组的名字，兜底为「未分组」
+      expect(find.text('车间A'), findsNothing);
+      expect(find.text('未分组'), findsOneWidget);
     });
 
     testWidgets('详情页编辑：表单页能收到 DeviceConfig 路由参数并预填', (tester) async {
@@ -433,6 +492,35 @@ class _FakeConfigDao implements DeviceConfigDao {
 
   @override
   Future<DeviceConfig?> getByMacAddress(String mac) async => config;
+}
+
+/// 分组 Fake：getById 按 id 匹配预置分组，不匹配返回 null（模拟分组已删除）
+class _FakeGroupDao implements DeviceGroupDao {
+  _FakeGroupDao({this.group});
+
+  final DeviceGroup? group;
+
+  @override
+  Future<Database> get database async => throw UnimplementedError();
+
+  @override
+  Future<List<DeviceGroup>> getAll() async => group == null ? [] : [group!];
+
+  @override
+  Future<DeviceGroup?> getById(int id) async =>
+      group?.groupId == id ? group : null;
+
+  @override
+  Future<int> insert(DeviceGroup group) async => 1;
+
+  @override
+  Future<int> update(DeviceGroup group) async => 1;
+
+  @override
+  Future<void> updateSortOrders(List<int> orderedIds) async {}
+
+  @override
+  Future<int> delete(int id) async => 1;
 }
 
 class _FakeMeasurementDao implements MeasurementDao {

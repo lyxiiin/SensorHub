@@ -104,7 +104,7 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
       backgroundColor: colorScheme.surfaceContainerHigh,
       iconTheme: IconThemeData(color: colorScheme.primary, size: 20.r),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_sharp),
+        icon: const Icon(Icons.arrow_back_ios_new_rounded),
         onPressed: () => RouteUtils.pop(context),
       ),
       title: Text(
@@ -118,12 +118,12 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.refresh, color: colorScheme.onSurface),
+          icon: Icon(Icons.refresh_rounded, color: colorScheme.onSurface),
           iconSize: 22.r,
           onPressed: vm.refresh,
         ),
         PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
+          icon: Icon(Icons.more_vert_rounded, color: colorScheme.onSurface),
           onSelected: _onMenuSelected,
           itemBuilder: (context) => [
             PopupMenuItem(value: 'edit', child: Text(l10n.device_detail_edit)),
@@ -211,7 +211,7 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
       RouteUtils.popOfData(context, data: true);
     } catch (e) {
       logE('删除设备失败: $e', error: e, tag: 'DeviceDetailPage');
-      if (mounted) showToast('$e');
+      if (mounted) showToast(l10n.common_ui_operation_failed);
     }
   }
 
@@ -293,9 +293,10 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
           ),
           SizedBox(height: 12.h),
           // MAC 地址
+          // MAC 是设备硬件标识，用芯片图标比 LAN 拓扑图标更贴切
           Row(
             children: [
-              Icon(Icons.lan_outlined, size: 14.r, color: mutedColor),
+              Icon(Icons.memory_outlined, size: 14.r, color: mutedColor),
               SizedBox(width: 6.w),
               Text(
                 '${l10n.device_detail_mac}: ${vm.macAddress.isEmpty ? '--' : vm.macAddress}',
@@ -304,10 +305,34 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
             ],
           ),
           SizedBox(height: 8.h),
-          // 最近更新
+          // 所属分组：groupId → 分组名；未分组（含分组已被删除）显示「未分组」
           Row(
             children: [
-              Icon(Icons.schedule, size: 14.r, color: mutedColor),
+              Icon(Icons.folder_outlined, size: 14.r, color: mutedColor),
+              SizedBox(width: 6.w),
+              Text(
+                l10n.device_detail_group,
+                style: TextStyle(fontSize: 12.sp, color: mutedColor),
+              ),
+              const Spacer(),
+              // 分组名上限 20 字符，但翻译/字体缩放仍可能变长：封顶 + 省略号防溢出
+              Flexible(
+                child: Text(
+                  vm.groupName ?? l10n.device_group_ungrouped,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(fontSize: 12.sp, color: mutedColor),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          // 最近更新
+          // 最近更新：带刷新箭头的时钟，比纯时钟（schedule）更贴合"更新时间"语义
+          Row(
+            children: [
+              Icon(Icons.update_outlined, size: 14.r, color: mutedColor),
               SizedBox(width: 6.w),
               Text(
                 l10n.device_detail_last_update,

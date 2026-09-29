@@ -31,6 +31,23 @@ class DeviceGroupDao {
     }
   }
 
+  /// 按 ID 查询单个分组（设备详情页用它把 device_configs.groupId 翻译成分组名）
+  Future<DeviceGroup?> getById(int id) async {
+    final db = await database;
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        'device_group',
+        where: 'groupId = ?',
+        whereArgs: [id],
+      );
+      if (maps.isEmpty) return null;
+      return DeviceGroup.fromMap(maps.first);
+    } catch (e) {
+      logE('查询设备分组失败: id=$id, $e', error: e, tag: 'DAO');
+      rethrow;
+    }
+  }
+
   Future<int> insert(DeviceGroup group) async {
     if (group.groupName.length > 20) {
       logE('插入分组失败: ${group.groupName}, 长度 ${group.groupName.length} 超出上限 20', tag: 'DAO');

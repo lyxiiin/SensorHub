@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/ui/device/widgets/device_registration_form_page.dart';
 import 'package:sensor_hub/ui/device/widgets/group_management_page.dart';
 import 'package:sensor_hub/ui/device_detail/widgets/device_detail_page.dart';
@@ -43,7 +44,14 @@ class Routes{
         Scaffold(
           body: SafeArea(
             child: Center(
-              child: Text('No route defined for ${setting.name}'),
+              // Builder 确保 Text 位于 MaterialApp 之下，
+              // 才能取到 AppLocalizations
+              child: Builder(
+                builder: (context) => Text(
+                  AppLocalizations.of(context)
+                      .route_not_defined(setting.name ?? ''),
+                ),
+              ),
             ),
           ),));
   }

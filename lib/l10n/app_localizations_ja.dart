@@ -166,6 +166,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get device_detail_mac => 'MACアドレス';
 
   @override
+  String get device_detail_group => 'グループ';
+
+  @override
   String get device_detail_last_update => '最終更新';
 
   @override
@@ -197,4 +200,226 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get device_detail_chart_avg => '平均';
+
+  @override
+  String get common_ui_other => 'その他';
+
+  @override
+  String get common_ui_init_failed => '初期化に失敗しました...';
+
+  @override
+  String get common_ui_operation_failed => '操作に失敗しました。もう一度お試しください';
+
+  @override
+  String route_not_defined(String name) {
+    return '未定義のルート: $name';
+  }
+
+  @override
+  String get units_page_title => '読み取り単位';
+
+  @override
+  String get device_form_title_edit => 'デバイスを編集';
+
+  @override
+  String get device_form_title_register => 'デバイスを登録';
+
+  @override
+  String get device_form_section_info => 'デバイス情報';
+
+  @override
+  String get device_form_name_label => '名称';
+
+  @override
+  String get device_form_name_hint => 'デバイス名を入力';
+
+  @override
+  String get device_form_name_required => 'デバイス名は必須です';
+
+  @override
+  String get device_form_broker_label => 'サーバーアドレス(Broker)';
+
+  @override
+  String get device_form_broker_hint => 'MQTTサーバーアドレスを入力';
+
+  @override
+  String get device_form_broker_required => 'サーバーアドレスは必須です';
+
+  @override
+  String get device_form_broker_invalid => '有効なサーバーアドレスを入力してください';
+
+  @override
+  String get device_form_port_label => 'ポート(Port)';
+
+  @override
+  String get device_form_port_hint => 'ポート番号を入力';
+
+  @override
+  String get device_form_port_required => 'ポート番号は必須です';
+
+  @override
+  String get device_form_port_invalid => '有効なポート番号を入力してください（1〜65535）';
+
+  @override
+  String get device_form_up_topic_label => '上りトピック(Topic)';
+
+  @override
+  String get device_form_up_topic_hint => '例：env_monitor/AABBCCDDEEFF/data';
+
+  @override
+  String get device_form_up_topic_required => '上りトピックは必須です';
+
+  @override
+  String get device_form_up_topic_invalid =>
+      'トピックの形式が無効です。MACアドレス部分が必要です（例：env_monitor/AABBCCDDEEFF/data）';
+
+  @override
+  String get device_form_up_topic_mac_invalid =>
+      'トピックの第2セグメントは12桁のMACアドレスである必要があります（例：AABBCCDDEEFF）';
+
+  @override
+  String get device_form_down_topic_label => '下りトピック(Topic)';
+
+  @override
+  String get device_form_down_topic_hint => 'MQTTトピックを入力';
+
+  @override
+  String get device_form_down_topic_required => 'トピックは必須です';
+
+  @override
+  String get device_form_username_label => 'ユーザー名';
+
+  @override
+  String get device_form_username_hint => 'ユーザー名を入力';
+
+  @override
+  String get device_form_username_required => 'ユーザー名は必須です';
+
+  @override
+  String get device_form_password_label => 'パスワード';
+
+  @override
+  String get device_form_password_hint => 'パスワードを入力';
+
+  @override
+  String get device_form_password_required => 'パスワードは必須です';
+
+  @override
+  String get device_form_password_too_short => 'パスワードは6文字以上で入力してください';
+
+  @override
+  String get device_form_advanced => '詳細設定';
+
+  @override
+  String get device_form_client_id_label => 'クライアントID (Client ID)';
+
+  @override
+  String get device_form_client_id_hint => '空欄の場合は自動生成されます';
+
+  @override
+  String get device_form_submit_save => '変更を保存';
+
+  @override
+  String get device_form_update_success => 'デバイス設定を更新しました';
+
+  @override
+  String get device_form_update_failed => 'デバイス設定の更新に失敗しました。もう一度お試しください';
+
+  @override
+  String get device_form_register_failed => 'デバイスの登録に失敗しました';
+
+  @override
+  String get sensor_type_temperature => '温度';
+
+  @override
+  String get sensor_type_humidity => '湿度';
+
+  @override
+  String get sensor_type_pressure => '気圧';
+
+  @override
+  String get sensor_type_co2 => '二酸化炭素';
+
+  @override
+  String get sensor_type_pm25 => 'PM2.5';
+
+  @override
+  String get sensor_type_pm10 => 'PM10';
+
+  @override
+  String get sensor_type_voc => 'VOC';
+
+  @override
+  String get sensor_type_noise => 'ノイズ';
+
+  @override
+  String get sensor_type_lux => '照度';
+
+  @override
+  String get notification_empty => 'メッセージはまだありません';
+
+  @override
+  String get notification_over_limit => '上限超過';
+
+  @override
+  String notification_sent_time(String time) {
+    return '送信時間: $time';
+  }
+
+  @override
+  String get notification_sensor_temperature => '温度';
+
+  @override
+  String get notification_sensor_humidity => '湿度';
+
+  @override
+  String get notification_sensor_pressure => '気圧';
+
+  @override
+  String get notification_sensor_hall => 'ホール';
+
+  @override
+  String get notification_sensor_human_activity => '人体検知';
+
+  @override
+  String get notification_sensor_light => '照度';
+
+  @override
+  String get notification_sensor_co2_percent => 'CO2（%）';
+
+  @override
+  String get notification_sensor_pm25 => 'PM2.5';
+
+  @override
+  String get notification_sensor_pm10 => 'PM10';
+
+  @override
+  String get notification_sensor_voc_index => 'VOC（index）';
+
+  @override
+  String get notification_sensor_noise => 'ノイズ';
+
+  @override
+  String get notification_sensor_battery_percent => '電池（%）';
+
+  @override
+  String get notification_sensor_co2_ppm => 'CO2（ppm）';
+
+  @override
+  String get notification_sensor_pm1 => 'PM1.0';
+
+  @override
+  String get notification_sensor_pm4 => 'PM4.0';
+
+  @override
+  String get notification_sensor_pm100 => 'PM100';
+
+  @override
+  String get notification_sensor_voc_density => 'VOC（µg/m³）';
+
+  @override
+  String get notification_sensor_battery_mv => '電池（mV）';
+
+  @override
+  String get notification_sensor_unknown => '不明';
 }

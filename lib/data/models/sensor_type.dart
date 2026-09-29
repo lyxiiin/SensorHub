@@ -62,12 +62,12 @@ extension SensorTypeMeta on SensorType{
         switch(this){
             case SensorType.temperature:    return 'assets/icons/icon_temperature.svg';
             case SensorType.humidity:       return 'assets/icons/icon_humidity.svg';
-            case SensorType.atmosPressure:  return 'assets/icons/icon_sensor.svg';
+            case SensorType.atmosPressure:  return 'assets/icons/icon_pressure.svg';
             case SensorType.co2:            return 'assets/icons/icon_co2.svg';
             case SensorType.pm25:           return 'assets/icons/icon_pm.svg';
             case SensorType.pm10:           return 'assets/icons/icon_pm.svg';
-            case SensorType.voc:            return 'assets/icons/icon_sensor.svg';
-            case SensorType.noise:          return 'assets/icons/icon_sensor.svg';
+            case SensorType.voc:            return 'assets/icons/icon_voc.svg';
+            case SensorType.noise:          return 'assets/icons/icon_noise.svg';
             case SensorType.lux:            return 'assets/icons/icon_lux.svg';
         }
     }

@@ -162,9 +162,9 @@ class _SettingItemState extends State<SettingItem>
                     )
                   else
                     Icon(
-                      Icons.keyboard_arrow_right,
+                      Icons.chevron_right_rounded,
                       color: widget.colorScheme.onSurfaceVariant,
-                      size: 32.r,
+                      size: 26.r,
                     )
                 ],
               ),

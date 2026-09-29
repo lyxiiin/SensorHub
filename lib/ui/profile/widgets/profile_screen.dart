@@ -48,12 +48,12 @@ class _ProfileScreenState extends State<ProfileScreen>{
                 child: Column(
                   children: [
                     SettingItem(
-                      icon: "assets/icons/icon_device.svg",
+                      icon: "assets/icons/icon_bell.svg",
                       colorScheme: colorScheme,
                       title: appText.profile_screen_notification_settings,
                     ),
                     SettingItem(
-                      icon: "assets/icons/icon_device.svg",
+                      icon: "assets/icons/icon_unit.svg",
                       colorScheme: colorScheme,
                       title: appText.profile_screen_degree_unit,
                       onClick: (){
@@ -61,20 +61,23 @@ class _ProfileScreenState extends State<ProfileScreen>{
                       },
                     ),
                     SettingItem(
-                      icon: "assets/icons/icon_device.svg",
+                      icon: "assets/icons/icon_group.svg",
                       colorScheme: colorScheme,
-                      title: "分组管理",
+                      title: appText.group_manage_title,
                       onClick: (){
                         RouteUtils.pushForNamed(context, RoutePath.groupManagement);
                       },
                     ),
                     Consumer<SettingsService>(builder: (context,settings,child){
                       return settingItemState(
-                        icon: 'assets/icons/icon_device.svg',
+                        icon: 'assets/icons/icon_language.svg',
                         colorScheme: colorScheme,
                         title: appText.profile_screen_language,
                         showCurrentValue: true,
-                        currentValue: settings.languageName,
+                        // auto 档的存储名是中文占位，展示时按当前语言解析
+                        currentValue: settings.languageCode == 'auto'
+                            ? appText.automatic
+                            : settings.languageName,
                         onClick: (){
                           RouteUtils.pushForNamed(context, RoutePath.languageSelection);
                         },
@@ -82,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen>{
                     }),
                     Consumer<SettingsService>(builder: (context,settings,child){
                       return settingItemState(
-                        icon: "assets/icons/icon_device.svg",
+                        icon: "assets/icons/icon_appearance.svg",
                         colorScheme: colorScheme,
                         title: appText.profile_screen_appearance,
                         showBottomLine: false,

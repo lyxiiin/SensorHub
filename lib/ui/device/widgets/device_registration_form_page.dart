@@ -108,16 +108,19 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final appText = AppLocalizations.of(context);
     return Scaffold(
       // AppBar 的配色/标题样式由 AppThemes.appBarTheme 统一提供
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_sharp),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
             RouteUtils.pop(context);
           },
         ),
-        title: Text(_isEditMode ? "编辑设备" : "注册设备"),
+        title: Text(_isEditMode
+            ? appText.device_form_title_edit
+            : appText.device_form_title_register),
       ),
       body: SafeArea(
         child: GestureDetector(
@@ -135,7 +138,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   Padding(
                     padding: EdgeInsets.only(bottom: 24.h),
                     child: Text(
-                      "设备信息",
+                      appText.device_form_section_info,
                       style: TextStyle(fontSize: 20.sp),
                     ),
                   ),
@@ -143,11 +146,11 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   // 名称输入框
                   _buildTextField(
                     controller: _nameController,
-                    label: "名称",
-                    hint: "请输入设备名称",
+                    label: appText.device_form_name_label,
+                    hint: appText.device_form_name_hint,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "设备名称不能为空";
+                        return appText.device_form_name_required;
                       }
                       return null;
                     },
@@ -167,15 +170,15 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   SizedBox(height: 16.h),
                   _buildTextField(
                     controller: _brokerController,
-                    label: "服务器地址(Broker)",
-                    hint: "请输入MQTT服务器地址",
+                    label: appText.device_form_broker_label,
+                    hint: appText.device_form_broker_hint,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "服务器地址不能为空";
+                        return appText.device_form_broker_required;
                       }
                       // 简单的URL格式验证
                       if (!value.contains('.') && !value.contains(':')) {
-                        return "请输入有效的服务器地址";
+                        return appText.device_form_broker_invalid;
                       }
                       return null;
                     },
@@ -187,15 +190,15 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   // 端口输入框
                   _buildTextField(
                     controller: _portController,
-                    label: "端口(Port)",
-                    hint: "请输入端口号",
+                    label: appText.device_form_port_label,
+                    hint: appText.device_form_port_hint,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "端口号不能为空";
+                        return appText.device_form_port_required;
                       }
                       final port = int.tryParse(value);
                       if (port == null || port < 1 || port > 65535) {
-                        return "请输入有效的端口号(1-65535)";
+                        return appText.device_form_port_invalid;
                       }
                       return null;
                     },
@@ -206,19 +209,19 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   // 上传主题输入框
                   _buildTextField(
                     controller: _upTopicController,
-                    label: "上行主题(Topic)",
-                    hint: "例如 env_monitor/AABBCCDDEEFF/data",
+                    label: appText.device_form_up_topic_label,
+                    hint: appText.device_form_up_topic_hint,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return "上行主题不能为空";
+                        return appText.device_form_up_topic_required;
                       }
                       final segments = value.trim().split('/');
                       if (segments.length < 2) {
-                        return "主题格式无效，需包含 MAC 地址段（如 env_monitor/AABBCCDDEEFF/data）";
+                        return appText.device_form_up_topic_invalid;
                       }
                       final mac = segments[1];
                       if (!RegExp(r'^[0-9A-Fa-f]{12}$').hasMatch(mac)) {
-                        return "主题第二段须为12位MAC地址（如 AABBCCDDEEFF）";
+                        return appText.device_form_up_topic_mac_invalid;
                       }
                       return null;
                     },
@@ -229,11 +232,11 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   // 下行主题输入框
                   _buildTextField(
                     controller: _downTopicController,
-                    label: "下行主题(Topic)",
-                    hint: "请输入MQTT主题",
+                    label: appText.device_form_down_topic_label,
+                    hint: appText.device_form_down_topic_hint,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "主题不能为空";
+                        return appText.device_form_down_topic_required;
                       }
                       return null;
                     },
@@ -245,11 +248,11 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   // 用户名输入框
                   _buildTextField(
                     controller: _usernameController,
-                    label: "用户名称",
-                    hint: "请输入用户名",
+                    label: appText.device_form_username_label,
+                    hint: appText.device_form_username_hint,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "用户名不能为空";
+                        return appText.device_form_username_required;
                       }
                       return null;
                     },
@@ -261,14 +264,14 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                   // 密码输入框
                   _buildTextField(
                     controller: _passwordController,
-                    label: "密码",
-                    hint: "请输入密码",
+                    label: appText.device_form_password_label,
+                    hint: appText.device_form_password_hint,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "密码不能为空";
+                        return appText.device_form_password_required;
                       }
                       if (value.length < 6) {
-                        return "密码长度至少6位";
+                        return appText.device_form_password_too_short;
                       }
                       return null;
                     },
@@ -286,10 +289,10 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                       padding: EdgeInsets.symmetric(vertical: 8.h),
                       child: Row(
                         children: [
-                          Icon(_showAdvanced ? Icons.expand_less : Icons.expand_more,
+                          Icon(_showAdvanced ? Icons.expand_less_rounded : Icons.expand_more_rounded,
                               size: 20.r, color: colorScheme.primary),
                           SizedBox(width: 4.w),
-                          Text("高级设置",
+                          Text(appText.device_form_advanced,
                               style: TextStyle(fontSize: 14.sp, color: colorScheme.primary)),
                         ],
                       ),
@@ -299,8 +302,8 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                     SizedBox(height: 16.h),
                     _buildTextField(
                       controller: _clientIdController,
-                      label: "客户端ID (Client ID)",
-                      hint: "留空则自动生成",
+                      label: appText.device_form_client_id_label,
+                      hint: appText.device_form_client_id_hint,
                       validator: (value) => null, // 非必填
                       keyboardType: TextInputType.text,
                     ),
@@ -325,6 +328,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
   Widget _buildSubmitButton() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final appText = AppLocalizations.of(context);
     return Consumer<DeviceVM>(builder: (context, vm, child) {
       return ElevatedButton(
         onPressed: vm.isLoading
@@ -351,7 +355,9 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
                 child: const CircularProgressIndicator(strokeWidth: 2),
               )
             : Text(
-                _submitLabel,
+                _isEditMode
+                    ? appText.device_form_submit_save
+                    : appText.device_form_title_register,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -396,7 +402,7 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       // 用 initialValue：value 从 3.33 起已废弃
       initialValue: selection,
       isExpanded: true,
-      icon: Icon(Icons.expand_more, color: colorScheme.onSurfaceVariant),
+      icon: Icon(Icons.expand_more_rounded, color: colorScheme.onSurfaceVariant),
       // 由 DropdownButtonFormField 转发给内部 DropdownButton，
       // 保证选中项文案与 _buildTextField 的输入文案同字号
       style: theme.textTheme.bodyLarge,
@@ -472,9 +478,6 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
     );
   }
 
-  /// 提交按钮文案（编辑态与注册态区分）
-  String get _submitLabel => _isEditMode ? "保存修改" : "注册设备";
-
   /// 提交表单：编辑态更新已有配置，注册态新增设备
   Future<void> _submitForm() async {
     if (_isSubmitting) return;
@@ -522,19 +525,21 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       groupId: _selectedGroupId,
     );
 
+    // 跨 async gap 只允许使用已捕获的字符串，不再使用 context
+    final l10n = AppLocalizations.of(context);
     try {
       final ok = await viewModel.updateDevice(updated);
       if (!mounted) return;
       if (ok) {
-        showToast("设备配置已更新");
+        showToast(l10n.device_form_update_success);
         // 回传 true，详情页据此刷新设备名与概览信息
         RouteUtils.popOfData<bool>(context, data: true);
       } else {
-        showToast("设备配置更新失败，请重试");
+        showToast(l10n.device_form_update_failed);
       }
     } catch (e) {
       logE('更新设备配置失败: $e', error: e, tag: 'DeviceRegistrationFormPage');
-      if (mounted) showToast('$e');
+      if (mounted) showToast(l10n.common_ui_operation_failed);
     }
   }
 
@@ -557,10 +562,11 @@ class _DeviceRegistrationFormPageState extends State<DeviceRegistrationFormPage>
       groupId: _selectedGroupId,
     );
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     if (res) {
       RouteUtils.pushNamedAndRemoveUntil(context, RoutePath.main);
     } else {
-      showToast("注册设备失败");
+      showToast(l10n.device_form_register_failed);
     }
   }
 

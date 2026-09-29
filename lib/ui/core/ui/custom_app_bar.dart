@@ -18,7 +18,7 @@ AppBar createAppBar({
       size: 20.r,
     ),
     leading: IconButton(
-      icon: Icon(Icons.arrow_back_ios_new_sharp),
+      icon: Icon(Icons.arrow_back_ios_new_rounded),
       onPressed: onBack,
     ),
     title: Text(

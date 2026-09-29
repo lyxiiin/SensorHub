@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
+import 'package:sensor_hub/data/dao/device_group_dao.dart';
 import 'package:sensor_hub/data/dao/measurement_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
@@ -8,16 +9,21 @@ import 'package:sensor_hub/utils/app_logger.dart';
 
 /// 设备详情页 ViewModel
 ///
-/// 负责加载设备配置（名称 / MAC）、实时读数快照（history）与
+/// 负责加载设备配置（名称 / MAC / 所属分组）、实时读数快照（history）与
 /// 选定传感器在选定时间范围内的历史数据（chartData），
 /// 并联动「传感器选择」与「时间范围」两个图表筛选条件。
 class DeviceDetailVm extends ChangeNotifier {
   /// 可注入 DAO，便于测试；默认使用真实实现
-  DeviceDetailVm({DeviceConfigDao? configDao, MeasurementDao? measurementDao})
-    : _configDao = configDao ?? DeviceConfigDao(),
-      _measurementDao = measurementDao ?? MeasurementDao();
+  DeviceDetailVm({
+    DeviceConfigDao? configDao,
+    DeviceGroupDao? groupDao,
+    MeasurementDao? measurementDao,
+  }) : _configDao = configDao ?? DeviceConfigDao(),
+       _groupDao = groupDao ?? DeviceGroupDao(),
+       _measurementDao = measurementDao ?? MeasurementDao();
 
   final DeviceConfigDao _configDao;
+  final DeviceGroupDao _groupDao;
   final MeasurementDao _measurementDao;
 
   /// 超过该时长未收到数据即视为离线
@@ -36,6 +42,9 @@ class DeviceDetailVm extends ChangeNotifier {
   // ── 设备信息 ────────────────────────────────────────────────────
   String deviceName = '';
   String macAddress = '';
+
+  /// 设备所属分组名；null 表示未分组（含分组已被删除的兜底场景）
+  String? groupName;
 
   /// 设备在线状态（依据最近一次读数时间推断）
   bool get isOnline {
@@ -121,6 +130,25 @@ class DeviceDetailVm extends ChangeNotifier {
     }
     deviceName = currentDevice?.deviceName ?? "";
     macAddress = currentDevice?.macAddress ?? "";
+    await _loadGroupName();
+  }
+
+  /// 把 device_configs.groupId 翻译成分组名。
+  ///
+  /// 未分组（groupId 为 null）、分组已被删除、查询失败都回落为 null，
+  /// UI 侧统一显示「未分组」，避免把异常态暴露给用户。
+  Future<void> _loadGroupName() async {
+    final groupId = currentDevice?.groupId;
+    if (groupId == null) {
+      groupName = null;
+      return;
+    }
+    try {
+      groupName = (await _groupDao.getById(groupId))?.groupName;
+    } catch (e) {
+      logE('查询设备分组失败: groupId=$groupId', error: e, tag: 'DeviceDetailVm');
+      groupName = null;
+    }
   }
 
   /// 从 device_latest 快照表加载各传感器最新读数，

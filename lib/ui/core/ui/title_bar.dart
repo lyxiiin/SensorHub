@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 class TitleBar extends StatelessWidget{
   final String? title;
   final double? titleSize;
@@ -26,7 +28,7 @@ class TitleBar extends StatelessWidget{
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            title ?? "其他",
+            title ?? AppLocalizations.of(context).common_ui_other,
             style: TextStyle(
               color: colorScheme.onSurface,
               fontSize: titleSize ?? 24.sp,

@@ -166,6 +166,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get device_detail_mac => 'MAC 地址';
 
   @override
+  String get device_detail_group => '分组';
+
+  @override
   String get device_detail_last_update => '最近更新';
 
   @override
@@ -197,6 +200,228 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get device_detail_chart_avg => '平均';
+
+  @override
+  String get common_ui_other => '其他';
+
+  @override
+  String get common_ui_init_failed => '初始化失败...';
+
+  @override
+  String get common_ui_operation_failed => '操作失败，请重试';
+
+  @override
+  String route_not_defined(String name) {
+    return '未定义的路由: $name';
+  }
+
+  @override
+  String get units_page_title => '读数单位';
+
+  @override
+  String get device_form_title_edit => '编辑设备';
+
+  @override
+  String get device_form_title_register => '注册设备';
+
+  @override
+  String get device_form_section_info => '设备信息';
+
+  @override
+  String get device_form_name_label => '名称';
+
+  @override
+  String get device_form_name_hint => '请输入设备名称';
+
+  @override
+  String get device_form_name_required => '设备名称不能为空';
+
+  @override
+  String get device_form_broker_label => '服务器地址(Broker)';
+
+  @override
+  String get device_form_broker_hint => '请输入MQTT服务器地址';
+
+  @override
+  String get device_form_broker_required => '服务器地址不能为空';
+
+  @override
+  String get device_form_broker_invalid => '请输入有效的服务器地址';
+
+  @override
+  String get device_form_port_label => '端口(Port)';
+
+  @override
+  String get device_form_port_hint => '请输入端口号';
+
+  @override
+  String get device_form_port_required => '端口号不能为空';
+
+  @override
+  String get device_form_port_invalid => '请输入有效的端口号(1-65535)';
+
+  @override
+  String get device_form_up_topic_label => '上行主题(Topic)';
+
+  @override
+  String get device_form_up_topic_hint => '例如 env_monitor/AABBCCDDEEFF/data';
+
+  @override
+  String get device_form_up_topic_required => '上行主题不能为空';
+
+  @override
+  String get device_form_up_topic_invalid =>
+      '主题格式无效，需包含 MAC 地址段（如 env_monitor/AABBCCDDEEFF/data）';
+
+  @override
+  String get device_form_up_topic_mac_invalid =>
+      '主题第二段须为12位MAC地址（如 AABBCCDDEEFF）';
+
+  @override
+  String get device_form_down_topic_label => '下行主题(Topic)';
+
+  @override
+  String get device_form_down_topic_hint => '请输入MQTT主题';
+
+  @override
+  String get device_form_down_topic_required => '主题不能为空';
+
+  @override
+  String get device_form_username_label => '用户名称';
+
+  @override
+  String get device_form_username_hint => '请输入用户名';
+
+  @override
+  String get device_form_username_required => '用户名不能为空';
+
+  @override
+  String get device_form_password_label => '密码';
+
+  @override
+  String get device_form_password_hint => '请输入密码';
+
+  @override
+  String get device_form_password_required => '密码不能为空';
+
+  @override
+  String get device_form_password_too_short => '密码长度至少6位';
+
+  @override
+  String get device_form_advanced => '高级设置';
+
+  @override
+  String get device_form_client_id_label => '客户端ID (Client ID)';
+
+  @override
+  String get device_form_client_id_hint => '留空则自动生成';
+
+  @override
+  String get device_form_submit_save => '保存修改';
+
+  @override
+  String get device_form_update_success => '设备配置已更新';
+
+  @override
+  String get device_form_update_failed => '设备配置更新失败，请重试';
+
+  @override
+  String get device_form_register_failed => '注册设备失败';
+
+  @override
+  String get sensor_type_temperature => '温度';
+
+  @override
+  String get sensor_type_humidity => '湿度';
+
+  @override
+  String get sensor_type_pressure => '压力';
+
+  @override
+  String get sensor_type_co2 => '二氧化碳';
+
+  @override
+  String get sensor_type_pm25 => 'PM2.5';
+
+  @override
+  String get sensor_type_pm10 => 'PM10';
+
+  @override
+  String get sensor_type_voc => 'VOC';
+
+  @override
+  String get sensor_type_noise => '噪声';
+
+  @override
+  String get sensor_type_lux => '光';
+
+  @override
+  String get notification_empty => '暂未收到消息';
+
+  @override
+  String get notification_over_limit => '超限';
+
+  @override
+  String notification_sent_time(String time) {
+    return '发送时间: $time';
+  }
+
+  @override
+  String get notification_sensor_temperature => '温度';
+
+  @override
+  String get notification_sensor_humidity => '湿度';
+
+  @override
+  String get notification_sensor_pressure => '气压';
+
+  @override
+  String get notification_sensor_hall => '霍尔';
+
+  @override
+  String get notification_sensor_human_activity => '人体活动';
+
+  @override
+  String get notification_sensor_light => '光感';
+
+  @override
+  String get notification_sensor_co2_percent => 'CO2(%)';
+
+  @override
+  String get notification_sensor_pm25 => 'PM2.5';
+
+  @override
+  String get notification_sensor_pm10 => 'PM10';
+
+  @override
+  String get notification_sensor_voc_index => 'VOC(index)';
+
+  @override
+  String get notification_sensor_noise => '噪声';
+
+  @override
+  String get notification_sensor_battery_percent => '电量(%)';
+
+  @override
+  String get notification_sensor_co2_ppm => 'CO2(ppm)';
+
+  @override
+  String get notification_sensor_pm1 => 'PM1.0';
+
+  @override
+  String get notification_sensor_pm4 => 'PM4.0';
+
+  @override
+  String get notification_sensor_pm100 => 'PM100';
+
+  @override
+  String get notification_sensor_voc_density => 'VOC(µg/m³)';
+
+  @override
+  String get notification_sensor_battery_mv => '电量(mV)';
+
+  @override
+  String get notification_sensor_unknown => '未知';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -361,6 +586,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get device_detail_mac => 'MAC 位址';
 
   @override
+  String get device_detail_group => '分組';
+
+  @override
   String get device_detail_last_update => '最近更新';
 
   @override
@@ -392,4 +620,226 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get device_detail_chart_avg => '平均';
+
+  @override
+  String get common_ui_other => '其他';
+
+  @override
+  String get common_ui_init_failed => '初始化失敗...';
+
+  @override
+  String get common_ui_operation_failed => '操作失敗，請重試';
+
+  @override
+  String route_not_defined(String name) {
+    return '未定義的路由: $name';
+  }
+
+  @override
+  String get units_page_title => '讀數單位';
+
+  @override
+  String get device_form_title_edit => '編輯裝置';
+
+  @override
+  String get device_form_title_register => '註冊裝置';
+
+  @override
+  String get device_form_section_info => '裝置資訊';
+
+  @override
+  String get device_form_name_label => '名稱';
+
+  @override
+  String get device_form_name_hint => '請輸入裝置名稱';
+
+  @override
+  String get device_form_name_required => '裝置名稱不能為空';
+
+  @override
+  String get device_form_broker_label => '伺服器位址(Broker)';
+
+  @override
+  String get device_form_broker_hint => '請輸入MQTT伺服器位址';
+
+  @override
+  String get device_form_broker_required => '伺服器位址不能為空';
+
+  @override
+  String get device_form_broker_invalid => '請輸入有效的伺服器位址';
+
+  @override
+  String get device_form_port_label => '連接埠(Port)';
+
+  @override
+  String get device_form_port_hint => '請輸入連接埠號';
+
+  @override
+  String get device_form_port_required => '連接埠號不能為空';
+
+  @override
+  String get device_form_port_invalid => '請輸入有效的連接埠號(1-65535)';
+
+  @override
+  String get device_form_up_topic_label => '上行主題(Topic)';
+
+  @override
+  String get device_form_up_topic_hint => '例如 env_monitor/AABBCCDDEEFF/data';
+
+  @override
+  String get device_form_up_topic_required => '上行主題不能為空';
+
+  @override
+  String get device_form_up_topic_invalid =>
+      '主題格式無效，需包含 MAC 位址段（如 env_monitor/AABBCCDDEEFF/data）';
+
+  @override
+  String get device_form_up_topic_mac_invalid =>
+      '主題第二段須為12位MAC位址（如 AABBCCDDEEFF）';
+
+  @override
+  String get device_form_down_topic_label => '下行主題(Topic)';
+
+  @override
+  String get device_form_down_topic_hint => '請輸入MQTT主題';
+
+  @override
+  String get device_form_down_topic_required => '主題不能為空';
+
+  @override
+  String get device_form_username_label => '使用者名稱';
+
+  @override
+  String get device_form_username_hint => '請輸入使用者名稱';
+
+  @override
+  String get device_form_username_required => '使用者名稱不能為空';
+
+  @override
+  String get device_form_password_label => '密碼';
+
+  @override
+  String get device_form_password_hint => '請輸入密碼';
+
+  @override
+  String get device_form_password_required => '密碼不能為空';
+
+  @override
+  String get device_form_password_too_short => '密碼長度至少6位';
+
+  @override
+  String get device_form_advanced => '進階設定';
+
+  @override
+  String get device_form_client_id_label => '用戶端ID (Client ID)';
+
+  @override
+  String get device_form_client_id_hint => '留空則自動生成';
+
+  @override
+  String get device_form_submit_save => '儲存修改';
+
+  @override
+  String get device_form_update_success => '裝置設定已更新';
+
+  @override
+  String get device_form_update_failed => '裝置設定更新失敗，請重試';
+
+  @override
+  String get device_form_register_failed => '註冊裝置失敗';
+
+  @override
+  String get sensor_type_temperature => '溫度';
+
+  @override
+  String get sensor_type_humidity => '濕度';
+
+  @override
+  String get sensor_type_pressure => '氣壓';
+
+  @override
+  String get sensor_type_co2 => '二氧化碳';
+
+  @override
+  String get sensor_type_pm25 => 'PM2.5';
+
+  @override
+  String get sensor_type_pm10 => 'PM10';
+
+  @override
+  String get sensor_type_voc => 'VOC';
+
+  @override
+  String get sensor_type_noise => '噪音';
+
+  @override
+  String get sensor_type_lux => '光';
+
+  @override
+  String get notification_empty => '尚未收到訊息';
+
+  @override
+  String get notification_over_limit => '超限';
+
+  @override
+  String notification_sent_time(String time) {
+    return '發送時間: $time';
+  }
+
+  @override
+  String get notification_sensor_temperature => '溫度';
+
+  @override
+  String get notification_sensor_humidity => '濕度';
+
+  @override
+  String get notification_sensor_pressure => '氣壓';
+
+  @override
+  String get notification_sensor_hall => '霍爾';
+
+  @override
+  String get notification_sensor_human_activity => '人體活動';
+
+  @override
+  String get notification_sensor_light => '光感';
+
+  @override
+  String get notification_sensor_co2_percent => 'CO2(%)';
+
+  @override
+  String get notification_sensor_pm25 => 'PM2.5';
+
+  @override
+  String get notification_sensor_pm10 => 'PM10';
+
+  @override
+  String get notification_sensor_voc_index => 'VOC(index)';
+
+  @override
+  String get notification_sensor_noise => '噪音';
+
+  @override
+  String get notification_sensor_battery_percent => '電量(%)';
+
+  @override
+  String get notification_sensor_co2_ppm => 'CO2(ppm)';
+
+  @override
+  String get notification_sensor_pm1 => 'PM1.0';
+
+  @override
+  String get notification_sensor_pm4 => 'PM4.0';
+
+  @override
+  String get notification_sensor_pm100 => 'PM100';
+
+  @override
+  String get notification_sensor_voc_density => 'VOC(µg/m³)';
+
+  @override
+  String get notification_sensor_battery_mv => '電量(mV)';
+
+  @override
+  String get notification_sensor_unknown => '未知';
 }

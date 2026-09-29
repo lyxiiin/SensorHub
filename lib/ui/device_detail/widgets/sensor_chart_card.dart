@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
-import 'package:sensor_hub/ui/notification/widgets/notification_screen.dart';
+import 'package:sensor_hub/ui/core/i18n/sensor_type_l10n.dart';
 
 /// 历史趋势卡片
 ///
@@ -69,7 +69,7 @@ class SensorChartCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildToolbar(colorScheme, sensor),
+          _buildToolbar(colorScheme, sensor, l10n),
           SizedBox(height: 12.h),
           Divider(
             height: 1.h,
@@ -92,7 +92,11 @@ class SensorChartCard extends StatelessWidget {
   }
 
   // ── 工具栏：传感器选择 + 时间范围 ───────────────────────────────
-  Widget _buildToolbar(ColorScheme colorScheme, SensorType? sensor) {
+  Widget _buildToolbar(
+    ColorScheme colorScheme,
+    SensorType? sensor,
+    AppLocalizations l10n,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -105,12 +109,12 @@ class SensorChartCard extends StatelessWidget {
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
-            icon: Icon(Icons.expand_more, color: colorScheme.onSurfaceVariant),
+            icon: Icon(Icons.expand_more_rounded, color: colorScheme.onSurfaceVariant),
             items: availableSensors.map((type) {
               return DropdownMenuItem<SensorType>(
                 value: type,
                 child: Text(
-                  '${type.displayName} (${type.unit})',
+                  '${type.localizedName(l10n)} (${type.unit})',
                   style: TextStyle(fontSize: 13.sp),
                   overflow: TextOverflow.ellipsis,
                 ),

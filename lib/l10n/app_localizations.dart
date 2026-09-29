@@ -407,6 +407,12 @@ abstract class AppLocalizations {
   /// **'MAC 地址'**
   String get device_detail_mac;
 
+  /// No description provided for @device_detail_group.
+  ///
+  /// In zh, this message translates to:
+  /// **'分组'**
+  String get device_detail_group;
+
   /// No description provided for @device_detail_last_update.
   ///
   /// In zh, this message translates to:
@@ -472,6 +478,438 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'平均'**
   String get device_detail_chart_avg;
+
+  /// No description provided for @common_ui_other.
+  ///
+  /// In zh, this message translates to:
+  /// **'其他'**
+  String get common_ui_other;
+
+  /// No description provided for @common_ui_init_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'初始化失败...'**
+  String get common_ui_init_failed;
+
+  /// No description provided for @common_ui_operation_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'操作失败，请重试'**
+  String get common_ui_operation_failed;
+
+  /// No description provided for @route_not_defined.
+  ///
+  /// In zh, this message translates to:
+  /// **'未定义的路由: {name}'**
+  String route_not_defined(String name);
+
+  /// No description provided for @units_page_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'读数单位'**
+  String get units_page_title;
+
+  /// No description provided for @device_form_title_edit.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑设备'**
+  String get device_form_title_edit;
+
+  /// No description provided for @device_form_title_register.
+  ///
+  /// In zh, this message translates to:
+  /// **'注册设备'**
+  String get device_form_title_register;
+
+  /// No description provided for @device_form_section_info.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备信息'**
+  String get device_form_section_info;
+
+  /// No description provided for @device_form_name_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'名称'**
+  String get device_form_name_label;
+
+  /// No description provided for @device_form_name_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入设备名称'**
+  String get device_form_name_hint;
+
+  /// No description provided for @device_form_name_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备名称不能为空'**
+  String get device_form_name_required;
+
+  /// No description provided for @device_form_broker_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器地址(Broker)'**
+  String get device_form_broker_label;
+
+  /// No description provided for @device_form_broker_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入MQTT服务器地址'**
+  String get device_form_broker_hint;
+
+  /// No description provided for @device_form_broker_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器地址不能为空'**
+  String get device_form_broker_required;
+
+  /// No description provided for @device_form_broker_invalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入有效的服务器地址'**
+  String get device_form_broker_invalid;
+
+  /// No description provided for @device_form_port_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'端口(Port)'**
+  String get device_form_port_label;
+
+  /// No description provided for @device_form_port_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入端口号'**
+  String get device_form_port_hint;
+
+  /// No description provided for @device_form_port_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'端口号不能为空'**
+  String get device_form_port_required;
+
+  /// No description provided for @device_form_port_invalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入有效的端口号(1-65535)'**
+  String get device_form_port_invalid;
+
+  /// No description provided for @device_form_up_topic_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'上行主题(Topic)'**
+  String get device_form_up_topic_label;
+
+  /// No description provided for @device_form_up_topic_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'例如 env_monitor/AABBCCDDEEFF/data'**
+  String get device_form_up_topic_hint;
+
+  /// No description provided for @device_form_up_topic_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'上行主题不能为空'**
+  String get device_form_up_topic_required;
+
+  /// No description provided for @device_form_up_topic_invalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题格式无效，需包含 MAC 地址段（如 env_monitor/AABBCCDDEEFF/data）'**
+  String get device_form_up_topic_invalid;
+
+  /// No description provided for @device_form_up_topic_mac_invalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题第二段须为12位MAC地址（如 AABBCCDDEEFF）'**
+  String get device_form_up_topic_mac_invalid;
+
+  /// No description provided for @device_form_down_topic_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'下行主题(Topic)'**
+  String get device_form_down_topic_label;
+
+  /// No description provided for @device_form_down_topic_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入MQTT主题'**
+  String get device_form_down_topic_hint;
+
+  /// No description provided for @device_form_down_topic_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题不能为空'**
+  String get device_form_down_topic_required;
+
+  /// No description provided for @device_form_username_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户名称'**
+  String get device_form_username_label;
+
+  /// No description provided for @device_form_username_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入用户名'**
+  String get device_form_username_hint;
+
+  /// No description provided for @device_form_username_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户名不能为空'**
+  String get device_form_username_required;
+
+  /// No description provided for @device_form_password_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码'**
+  String get device_form_password_label;
+
+  /// No description provided for @device_form_password_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入密码'**
+  String get device_form_password_hint;
+
+  /// No description provided for @device_form_password_required.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码不能为空'**
+  String get device_form_password_required;
+
+  /// No description provided for @device_form_password_too_short.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码长度至少6位'**
+  String get device_form_password_too_short;
+
+  /// No description provided for @device_form_advanced.
+  ///
+  /// In zh, this message translates to:
+  /// **'高级设置'**
+  String get device_form_advanced;
+
+  /// No description provided for @device_form_client_id_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'客户端ID (Client ID)'**
+  String get device_form_client_id_label;
+
+  /// No description provided for @device_form_client_id_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'留空则自动生成'**
+  String get device_form_client_id_hint;
+
+  /// No description provided for @device_form_submit_save.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存修改'**
+  String get device_form_submit_save;
+
+  /// No description provided for @device_form_update_success.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备配置已更新'**
+  String get device_form_update_success;
+
+  /// No description provided for @device_form_update_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备配置更新失败，请重试'**
+  String get device_form_update_failed;
+
+  /// No description provided for @device_form_register_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'注册设备失败'**
+  String get device_form_register_failed;
+
+  /// No description provided for @sensor_type_temperature.
+  ///
+  /// In zh, this message translates to:
+  /// **'温度'**
+  String get sensor_type_temperature;
+
+  /// No description provided for @sensor_type_humidity.
+  ///
+  /// In zh, this message translates to:
+  /// **'湿度'**
+  String get sensor_type_humidity;
+
+  /// No description provided for @sensor_type_pressure.
+  ///
+  /// In zh, this message translates to:
+  /// **'压力'**
+  String get sensor_type_pressure;
+
+  /// No description provided for @sensor_type_co2.
+  ///
+  /// In zh, this message translates to:
+  /// **'二氧化碳'**
+  String get sensor_type_co2;
+
+  /// No description provided for @sensor_type_pm25.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM2.5'**
+  String get sensor_type_pm25;
+
+  /// No description provided for @sensor_type_pm10.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM10'**
+  String get sensor_type_pm10;
+
+  /// No description provided for @sensor_type_voc.
+  ///
+  /// In zh, this message translates to:
+  /// **'VOC'**
+  String get sensor_type_voc;
+
+  /// No description provided for @sensor_type_noise.
+  ///
+  /// In zh, this message translates to:
+  /// **'噪声'**
+  String get sensor_type_noise;
+
+  /// No description provided for @sensor_type_lux.
+  ///
+  /// In zh, this message translates to:
+  /// **'光'**
+  String get sensor_type_lux;
+
+  /// No description provided for @notification_empty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂未收到消息'**
+  String get notification_empty;
+
+  /// No description provided for @notification_over_limit.
+  ///
+  /// In zh, this message translates to:
+  /// **'超限'**
+  String get notification_over_limit;
+
+  /// No description provided for @notification_sent_time.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送时间: {time}'**
+  String notification_sent_time(String time);
+
+  /// No description provided for @notification_sensor_temperature.
+  ///
+  /// In zh, this message translates to:
+  /// **'温度'**
+  String get notification_sensor_temperature;
+
+  /// No description provided for @notification_sensor_humidity.
+  ///
+  /// In zh, this message translates to:
+  /// **'湿度'**
+  String get notification_sensor_humidity;
+
+  /// No description provided for @notification_sensor_pressure.
+  ///
+  /// In zh, this message translates to:
+  /// **'气压'**
+  String get notification_sensor_pressure;
+
+  /// No description provided for @notification_sensor_hall.
+  ///
+  /// In zh, this message translates to:
+  /// **'霍尔'**
+  String get notification_sensor_hall;
+
+  /// No description provided for @notification_sensor_human_activity.
+  ///
+  /// In zh, this message translates to:
+  /// **'人体活动'**
+  String get notification_sensor_human_activity;
+
+  /// No description provided for @notification_sensor_light.
+  ///
+  /// In zh, this message translates to:
+  /// **'光感'**
+  String get notification_sensor_light;
+
+  /// No description provided for @notification_sensor_co2_percent.
+  ///
+  /// In zh, this message translates to:
+  /// **'CO2(%)'**
+  String get notification_sensor_co2_percent;
+
+  /// No description provided for @notification_sensor_pm25.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM2.5'**
+  String get notification_sensor_pm25;
+
+  /// No description provided for @notification_sensor_pm10.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM10'**
+  String get notification_sensor_pm10;
+
+  /// No description provided for @notification_sensor_voc_index.
+  ///
+  /// In zh, this message translates to:
+  /// **'VOC(index)'**
+  String get notification_sensor_voc_index;
+
+  /// No description provided for @notification_sensor_noise.
+  ///
+  /// In zh, this message translates to:
+  /// **'噪声'**
+  String get notification_sensor_noise;
+
+  /// No description provided for @notification_sensor_battery_percent.
+  ///
+  /// In zh, this message translates to:
+  /// **'电量(%)'**
+  String get notification_sensor_battery_percent;
+
+  /// No description provided for @notification_sensor_co2_ppm.
+  ///
+  /// In zh, this message translates to:
+  /// **'CO2(ppm)'**
+  String get notification_sensor_co2_ppm;
+
+  /// No description provided for @notification_sensor_pm1.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM1.0'**
+  String get notification_sensor_pm1;
+
+  /// No description provided for @notification_sensor_pm4.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM4.0'**
+  String get notification_sensor_pm4;
+
+  /// No description provided for @notification_sensor_pm100.
+  ///
+  /// In zh, this message translates to:
+  /// **'PM100'**
+  String get notification_sensor_pm100;
+
+  /// No description provided for @notification_sensor_voc_density.
+  ///
+  /// In zh, this message translates to:
+  /// **'VOC(µg/m³)'**
+  String get notification_sensor_voc_density;
+
+  /// No description provided for @notification_sensor_battery_mv.
+  ///
+  /// In zh, this message translates to:
+  /// **'电量(mV)'**
+  String get notification_sensor_battery_mv;
+
+  /// No description provided for @notification_sensor_unknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'未知'**
+  String get notification_sensor_unknown;
 }
 
 class _AppLocalizationsDelegate

@@ -11,33 +11,7 @@ import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
 import '../../../l10n/app_localizations.dart';
-
-final Map<String,String> labelMap = {
-  'temperature': "温度",
-  'co2': "二氧化碳",
-  'humidity': "湿度",
-  'atmosPressure':"大气压强",
-  'pm25': "细颗粒物",
-  'pm10': "可吸入颗粒物",
-  'voc': "挥发性有机化合物",
-  'noise': "噪音",
-  'lux': "照度",
-  "externalCo2": "二氧化碳(外接)",
-  "externalTemperature": "温度(外接)",
-};
-final Map<String,String> labelUnitMap = {
-  'temperature': "℃",
-  'co2': "ppm",
-  'humidity': "%",
-  'atmosPressure':"kPa",
-  'pm25': "µg/m³",
-  'pm10': "µg/m³",
-  'voc': "mg/m³",
-  'noise': "dB",
-  'lux': "Lux",
-  "externalCo2": "%",
-  "externalTemperature": "℃",
-};
+import '../../core/i18n/sensor_type_l10n.dart';
 
 class DeviceInfoCard extends StatelessWidget{
   final ColorScheme colorScheme;
@@ -175,7 +149,7 @@ class DeviceInfoCard extends StatelessWidget{
                               ),
                               SizedBox(width: 6.w),
                               Text(
-                                  entry.key.displayName,
+                                  entry.key.localizedName(appText),
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: colorScheme.onSurfaceVariant,
@@ -230,12 +204,13 @@ class DeviceInfoCard extends StatelessWidget{
 
     if (config == null) return;
     if (!context.mounted) return;
+    final l10n = AppLocalizations.of(context);
     final result = await showMenu<String>(
       context: context,
       position: position,
-      items: const [
-        PopupMenuItem(value: 'edit',child: Text("编辑")),
-        PopupMenuItem(value: 'delete',child: Text("删除")),
+      items: [
+        PopupMenuItem(value: 'edit',child: Text(l10n.device_detail_edit)),
+        PopupMenuItem(value: 'delete',child: Text(l10n.device_detail_delete)),
       ],
     );
 
@@ -246,7 +221,6 @@ class DeviceInfoCard extends StatelessWidget{
           arguments: config
       );
     }else if(result == 'delete'){
-      final l10n = AppLocalizations.of(context);
       final confirmed = await showConfirmDialog(context,
           title: l10n.device_detail_delete_title,
           message: l10n.device_detail_delete_message,
@@ -265,7 +239,7 @@ class DeviceInfoCard extends StatelessWidget{
 
       }catch(e){
         logE('删除设备失败： $e', error: e, tag:'DeviceDetailPage');
-        if (context.mounted) showToast('$e');
+        if (context.mounted) showToast(l10n.common_ui_operation_failed);
       }
     }
   }

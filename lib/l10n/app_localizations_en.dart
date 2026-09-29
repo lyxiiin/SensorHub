@@ -167,6 +167,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get device_detail_mac => 'MAC Address';
 
   @override
+  String get device_detail_group => 'Group';
+
+  @override
   String get device_detail_last_update => 'Last Update';
 
   @override
@@ -200,4 +203,228 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get device_detail_chart_avg => 'Avg';
+
+  @override
+  String get common_ui_other => 'Other';
+
+  @override
+  String get common_ui_init_failed => 'Initialization failed...';
+
+  @override
+  String get common_ui_operation_failed => 'Operation failed. Please try again';
+
+  @override
+  String route_not_defined(String name) {
+    return 'Route not defined: $name';
+  }
+
+  @override
+  String get units_page_title => 'Reading Units';
+
+  @override
+  String get device_form_title_edit => 'Edit Device';
+
+  @override
+  String get device_form_title_register => 'Register Device';
+
+  @override
+  String get device_form_section_info => 'Device Information';
+
+  @override
+  String get device_form_name_label => 'Name';
+
+  @override
+  String get device_form_name_hint => 'Enter device name';
+
+  @override
+  String get device_form_name_required => 'Device name is required';
+
+  @override
+  String get device_form_broker_label => 'Server Address (Broker)';
+
+  @override
+  String get device_form_broker_hint => 'Enter MQTT server address';
+
+  @override
+  String get device_form_broker_required => 'Server address is required';
+
+  @override
+  String get device_form_broker_invalid => 'Enter a valid server address';
+
+  @override
+  String get device_form_port_label => 'Port';
+
+  @override
+  String get device_form_port_hint => 'Enter port number';
+
+  @override
+  String get device_form_port_required => 'Port is required';
+
+  @override
+  String get device_form_port_invalid => 'Enter a valid port (1-65535)';
+
+  @override
+  String get device_form_up_topic_label => 'Upstream Topic';
+
+  @override
+  String get device_form_up_topic_hint => 'e.g. env_monitor/AABBCCDDEEFF/data';
+
+  @override
+  String get device_form_up_topic_required => 'Upstream topic is required';
+
+  @override
+  String get device_form_up_topic_invalid =>
+      'Invalid topic format: a MAC address segment is required (e.g. env_monitor/AABBCCDDEEFF/data)';
+
+  @override
+  String get device_form_up_topic_mac_invalid =>
+      'The second segment must be a 12-character MAC address (e.g. AABBCCDDEEFF)';
+
+  @override
+  String get device_form_down_topic_label => 'Downstream Topic';
+
+  @override
+  String get device_form_down_topic_hint => 'Enter MQTT topic';
+
+  @override
+  String get device_form_down_topic_required => 'Topic is required';
+
+  @override
+  String get device_form_username_label => 'Username';
+
+  @override
+  String get device_form_username_hint => 'Enter username';
+
+  @override
+  String get device_form_username_required => 'Username is required';
+
+  @override
+  String get device_form_password_label => 'Password';
+
+  @override
+  String get device_form_password_hint => 'Enter password';
+
+  @override
+  String get device_form_password_required => 'Password is required';
+
+  @override
+  String get device_form_password_too_short =>
+      'Password must be at least 6 characters';
+
+  @override
+  String get device_form_advanced => 'Advanced Settings';
+
+  @override
+  String get device_form_client_id_label => 'Client ID';
+
+  @override
+  String get device_form_client_id_hint => 'Leave blank to auto-generate';
+
+  @override
+  String get device_form_submit_save => 'Save Changes';
+
+  @override
+  String get device_form_update_success => 'Device settings updated';
+
+  @override
+  String get device_form_update_failed =>
+      'Failed to update device settings. Please try again';
+
+  @override
+  String get device_form_register_failed => 'Failed to register device';
+
+  @override
+  String get sensor_type_temperature => 'Temperature';
+
+  @override
+  String get sensor_type_humidity => 'Humidity';
+
+  @override
+  String get sensor_type_pressure => 'Pressure';
+
+  @override
+  String get sensor_type_co2 => 'CO2';
+
+  @override
+  String get sensor_type_pm25 => 'PM2.5';
+
+  @override
+  String get sensor_type_pm10 => 'PM10';
+
+  @override
+  String get sensor_type_voc => 'VOC';
+
+  @override
+  String get sensor_type_noise => 'Noise';
+
+  @override
+  String get sensor_type_lux => 'Light';
+
+  @override
+  String get notification_empty => 'No messages yet';
+
+  @override
+  String get notification_over_limit => 'Over Limit';
+
+  @override
+  String notification_sent_time(String time) {
+    return 'Sent at $time';
+  }
+
+  @override
+  String get notification_sensor_temperature => 'Temperature';
+
+  @override
+  String get notification_sensor_humidity => 'Humidity';
+
+  @override
+  String get notification_sensor_pressure => 'Pressure';
+
+  @override
+  String get notification_sensor_hall => 'Hall';
+
+  @override
+  String get notification_sensor_human_activity => 'Human Activity';
+
+  @override
+  String get notification_sensor_light => 'Light';
+
+  @override
+  String get notification_sensor_co2_percent => 'CO2 (%)';
+
+  @override
+  String get notification_sensor_pm25 => 'PM2.5';
+
+  @override
+  String get notification_sensor_pm10 => 'PM10';
+
+  @override
+  String get notification_sensor_voc_index => 'VOC (index)';
+
+  @override
+  String get notification_sensor_noise => 'Noise';
+
+  @override
+  String get notification_sensor_battery_percent => 'Battery (%)';
+
+  @override
+  String get notification_sensor_co2_ppm => 'CO2 (ppm)';
+
+  @override
+  String get notification_sensor_pm1 => 'PM1.0';
+
+  @override
+  String get notification_sensor_pm4 => 'PM4.0';
+
+  @override
+  String get notification_sensor_pm100 => 'PM100';
+
+  @override
+  String get notification_sensor_voc_density => 'VOC (µg/m³)';
+
+  @override
+  String get notification_sensor_battery_mv => 'Battery (mV)';
+
+  @override
+  String get notification_sensor_unknown => 'Unknown';
 }
