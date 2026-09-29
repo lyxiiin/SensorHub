@@ -60,6 +60,14 @@ class _ProfileScreenState extends State<ProfileScreen>{
                         RouteUtils.pushForNamed(context, RoutePath.unitsConversion);
                       },
                     ),
+                    SettingItem(
+                      icon: "assets/icons/icon_device.svg",
+                      colorScheme: colorScheme,
+                      title: "分组管理",
+                      onClick: (){
+                        RouteUtils.pushForNamed(context, RoutePath.groupManagement);
+                      },
+                    ),
                     Consumer<SettingsService>(builder: (context,settings,child){
                       return settingItemState(
                         icon: 'assets/icons/icon_device.svg',

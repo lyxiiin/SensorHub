@@ -32,6 +32,14 @@ class DeviceGroupDao {
   }
 
   Future<int> insert(DeviceGroup group) async {
+    if (group.groupName.length > 20) {
+      logE('插入分组失败: ${group.groupName}, 长度 ${group.groupName.length} 超出上限 20', tag: 'DAO');
+      throw ArgumentError.value(
+        group.groupName,
+        'groupName',
+        '分组名长度不能超过 20 字符 (当前 ${group.groupName.length})',
+      );
+    }
     final db = await database;
     try {
       final id = await db.insert("device_group", group.toMap());

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:oktoast/oktoast.dart';
+import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
+import 'package:sensor_hub/route/route_utils.dart';
+import 'package:sensor_hub/route/routes.dart';
+import 'package:sensor_hub/ui/core/ui/confirm_dialog.dart';
+import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
+import 'package:sensor_hub/utils/app_logger.dart';
 
 import '../../../l10n/app_localizations.dart';
 
@@ -37,6 +44,7 @@ class DeviceInfoCard extends StatelessWidget{
   final String? icon;
   final String? name;
   final String? time;
+  final int? configId;
 
   /// 设备所属分组名；为空表示未分组，不渲染标签
   final String? groupName;
@@ -50,14 +58,17 @@ class DeviceInfoCard extends StatelessWidget{
     this.time,
     this.groupName,
     required this.dateList,
-    this.onTap
+    this.onTap,
+    this.configId,
   });
   @override
   Widget build(BuildContext context) {
     final appText = AppLocalizations.of(context);
     final displayTime = (time?.trim().isNotEmpty == true) ? time! : "0";
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      onLongPressStart: (details) => _showMenu(context, details,configId),
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.only(left: 12.w, right: 12.w, top: 12.h, bottom: 12.h),
@@ -123,7 +134,7 @@ class DeviceInfoCard extends StatelessWidget{
                 Text(
                   "$displayTime${appText.device_screen_minutes_ago}",
                   style: TextStyle(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                     fontSize: 12.sp,
                   ),
                 ),
@@ -198,6 +209,65 @@ class DeviceInfoCard extends StatelessWidget{
       return (value / 10.0).toString();
     }
     return value.toString();
+  }
+
+  Future<void> _showMenu(
+      BuildContext context,
+      LongPressStartDetails details,
+      int? configId,
+      ) async {
+    if(configId == null)  return;
+    // Overlay 定位只依赖 details 和 context，不依赖查库结果：
+    // 放在 await 之前的同步区，context 随便用，不存在跨 async gap 问题
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromLTRB(
+      details.globalPosition.dx,
+      details.globalPosition.dy,
+      overlay.size.width - details.globalPosition.dx,
+      overlay.size.height - details.globalPosition.dy,
+    );
+    final config = await context.read<DeviceVM>().configForEdit(configId);
+
+    if (config == null) return;
+    if (!context.mounted) return;
+    final result = await showMenu<String>(
+      context: context,
+      position: position,
+      items: const [
+        PopupMenuItem(value: 'edit',child: Text("编辑")),
+        PopupMenuItem(value: 'delete',child: Text("删除")),
+      ],
+    );
+
+    if(!context.mounted) return;
+    if(result == 'edit'){
+      RouteUtils.pushForNamed(context,
+          RoutePath.deviceRegistrationFrom,
+          arguments: config
+      );
+    }else if(result == 'delete'){
+      final l10n = AppLocalizations.of(context);
+      final confirmed = await showConfirmDialog(context,
+          title: l10n.device_detail_delete_title,
+          message: l10n.device_detail_delete_message,
+          confirmLabel: l10n.device_detail_confirm,
+      );
+      if(confirmed != true || !context.mounted) return;
+      try{
+        await context.read<DeviceVM>().removeDevice(configId);
+        if(!context.mounted){
+          return;
+        }
+        showToast(l10n.device_detail_deleted);
+        // 注意：这里不能像详情页那样 popOfData——卡片长在设备列表（主导航 tab）里，
+        // pop 会把整个主界面关掉。removeDevice -> notifyListeners 后
+        // Consumer 会自动刷新列表，无需任何导航。
+
+      }catch(e){
+        logE('删除设备失败： $e', error: e, tag:'DeviceDetailPage');
+        if (context.mounted) showToast('$e');
+      }
+    }
   }
 
 

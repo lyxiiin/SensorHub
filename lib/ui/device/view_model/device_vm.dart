@@ -726,4 +726,13 @@ class DeviceVM with ChangeNotifier {
     }
     await connectDeviceToMqtt(updated);
   }
+
+  Future<DeviceConfig?> configForEdit(int configId) async {
+    try{
+      return await _configDao.getById(configId);
+    } catch (e){
+      logE("读取设备配置失败： $e", error: e, tag: "DeviceVM");
+      return null;
+    }
+  }
 }

@@ -10,6 +10,7 @@ import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/route/routes.dart';
+import 'package:sensor_hub/ui/core/ui/confirm_dialog.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/device_detail/device_detail_vm.dart';
 import 'package:sensor_hub/ui/device_detail/widgets/device_info_section.dart';
@@ -190,28 +191,16 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
   }
 
   /// 删除确认 → 移除设备 → 返回列表
+  ///
+  /// 确认弹窗用公共的 [showConfirmDialog]，这里只保留
+  /// 业务操作（removeDevice）与结果反馈 / 导航。
   Future<void> _confirmDelete() async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.device_detail_delete_title),
-        content: Text(l10n.device_detail_delete_message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.common_ui_cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.device_detail_confirm),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: l10n.device_detail_delete_title,
+      message: l10n.device_detail_delete_message,
+      confirmLabel: l10n.device_detail_confirm,
     );
     if (confirmed != true || !mounted) return;
 

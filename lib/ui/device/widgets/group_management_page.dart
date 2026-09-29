@@ -7,6 +7,7 @@ import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../core/ui/confirm_dialog.dart';
 import '../../core/ui/custom_app_bar.dart';
 
 /// 分组管理页：新建 / 重命名 / 拖拽排序 / 删除。
@@ -340,31 +341,15 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     final vm = context.read<DeviceVM>();
     final count = _deviceCountIn(vm, group.groupId!);
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(appText.group_manage_delete_title),
-        content: Text(
-          appText.group_manage_delete_message(group.groupName, count),
-        ),
-        actions: [
-          TextButton(
-            key: const ValueKey('group-delete-cancel'),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(appText.common_ui_cancel),
-          ),
-          FilledButton(
-            key: const ValueKey('group-delete-confirm'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(dialogContext).colorScheme.error,
-              foregroundColor:
-                  Theme.of(dialogContext).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(appText.group_manage_delete),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: appText.group_manage_delete_title,
+      message: appText.group_manage_delete_message(group.groupName, count),
+      confirmLabel: appText.group_manage_delete,
+      cancelLabel: appText.common_ui_cancel,
+      // 测试通过这两个 Key 定位按钮（group_management_page_test）
+      confirmKey: const ValueKey('group-delete-confirm'),
+      cancelKey: const ValueKey('group-delete-cancel'),
     );
 
     if (confirmed != true || !mounted) return;
