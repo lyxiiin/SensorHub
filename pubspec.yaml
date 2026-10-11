@@ -40,6 +40,9 @@ dependencies:
   mqtt_client: ^10.11.1
   # 数据库服务
   sqflite: ^2.4.2
+  # Windows / Linux 桌面端没有原生 sqflite 实现，必须由 FFI 版本顶上。
+  # 这是运行期依赖（不是测试依赖），随 App 一起发布。
+  sqflite_common_ffi: ^2.4.0+3
   path: ^1.9.1
   path_provider: ^2.1.5
 
@@ -48,7 +51,6 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
-  sqflite_common_ffi: ^2.4.0+3
 
 flutter:
 

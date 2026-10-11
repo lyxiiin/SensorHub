@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
+// sqflite_ffi 完整重导出了 sqflite（Database / openDatabase / databaseFactory），
+// 桌面端与移动端共用同一套 API，无需再单独 import sqflite。
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
 /// SQLite 不支持 ADD CONSTRAINT：
@@ -17,6 +19,24 @@ class SqliteService {
   SqliteService._internal();
 
   static const int _databaseVersion = 5;
+
+  /// 桌面端（Windows / Linux）sqflite 没有原生实现，必须切到 FFI。
+  ///
+  /// 放在这里而不是 main()：SqliteService 是所有 DAO 的唯一入口，
+  /// 在这里初始化能保证任何调用路径（含后台 MQTT 回调、测试）都拿到可用的 factory，
+  /// 不依赖"必须先跑过 main()"这种隐式前置条件。
+  static bool _desktopFactoryReady = false;
+
+  static void _ensureDatabaseFactory() {
+    if (_desktopFactoryReady) return;
+    // 移动端有原生插件，保持默认 factory，不要覆盖
+    if (Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+      logI('桌面端 SQLite 已切换到 FFI 实现', tag: 'DB');
+    }
+    _desktopFactoryReady = true;
+  }
 
   /// 缓存初始化 Future：并发首次调用只初始化一次；失败时清除缓存以便重试
   static Future<Database>? _databaseFuture;
@@ -36,6 +56,7 @@ class SqliteService {
   }
 
   Future<Database> _initDatabase() async {
+    _ensureDatabaseFactory();
     // 获取应用文档目录（安全、可写）
     final directory = await getApplicationDocumentsDirectory();
     final dbPath = join(directory.path, 'sensor_hub_database.db');
@@ -46,6 +67,7 @@ class SqliteService {
 
   /// 按当前版本打开数据库并启用外键；生产与迁移测试共用同一套回调
   Future<Database> _openDatabase(String dbPath) async {
+    _ensureDatabaseFactory();
     final db = await openDatabase(
       dbPath,
       version: _databaseVersion,
@@ -80,7 +102,7 @@ class SqliteService {
 
   /// 只读探测磁盘库文件的 user_version（不带 version 打开，不触发迁移回调）
   Future<int> _peekUserVersion(String dbPath) async {
-    final db = await openDatabase(dbPath);
+    final db = await databaseFactory.openDatabase(dbPath);
     try {
       final rows = await db.rawQuery('PRAGMA user_version');
       return (rows.first['user_version'] as int?) ?? 0;
