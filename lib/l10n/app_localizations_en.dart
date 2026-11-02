@@ -214,6 +214,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get common_ui_operation_failed => 'Operation failed. Please try again';
 
   @override
+  String get common_ui_window_too_small_title => 'Window too small';
+
+  @override
+  String get common_ui_window_too_small_hint =>
+      'Please enlarge the window, or lower the system display scaling and try again';
+
+  @override
   String route_not_defined(String name) {
     return 'Route not defined: $name';
   }

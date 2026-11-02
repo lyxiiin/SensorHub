@@ -497,6 +497,18 @@ abstract class AppLocalizations {
   /// **'操作失败，请重试'**
   String get common_ui_operation_failed;
 
+  /// No description provided for @common_ui_window_too_small_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'窗口过小'**
+  String get common_ui_window_too_small_title;
+
+  /// No description provided for @common_ui_window_too_small_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请放大窗口，或调低系统显示缩放比例后重试'**
+  String get common_ui_window_too_small_hint;
+
   /// No description provided for @route_not_defined.
   ///
   /// In zh, this message translates to:

@@ -211,6 +211,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get common_ui_operation_failed => '操作に失敗しました。もう一度お試しください';
 
   @override
+  String get common_ui_window_too_small_title => 'ウィンドウが小さすぎます';
+
+  @override
+  String get common_ui_window_too_small_hint =>
+      'ウィンドウを大きくするか、システムの表示スケールを下げてから再試行してください';
+
+  @override
   String route_not_defined(String name) {
     return '未定義のルート: $name';
   }

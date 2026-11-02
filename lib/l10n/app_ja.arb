@@ -76,6 +76,9 @@
   "common_ui_init_failed": "初期化に失敗しました...",
   "common_ui_operation_failed": "操作に失敗しました。もう一度お試しください",
 
+  "common_ui_window_too_small_title": "ウィンドウが小さすぎます",
+  "common_ui_window_too_small_hint": "ウィンドウを大きくするか、システムの表示スケールを下げてから再試行してください",
+
   "route_not_defined": "未定義のルート: {name}",
 
   "units_page_title": "読み取り単位",

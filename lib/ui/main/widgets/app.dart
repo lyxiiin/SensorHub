@@ -9,7 +9,8 @@ import 'package:sensor_hub/route/routes.dart';
 import 'package:sensor_hub/ui/core/themes/app_theme.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/profile/view_model/profile_vm.dart';
-import '../app_vm.dart';
+import 'package:sensor_hub/ui/core/responsive/app_breakpoints.dart';
+import 'package:sensor_hub/ui/core/responsive/window_size_guard.dart';
 
 class MyApp extends StatefulWidget{
   final SettingsService settingsService;
@@ -60,6 +61,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       child: OKToast(
         child: ScreenUtilInit(
           designSize: const Size(393, 873),
+          enableScaleWH: () => !isDesktopPlatForm,
+          enableScaleText: () => !isDesktopPlatForm,
+          minTextAdapt: true,
           builder: (context,child) {
             return Consumer<SettingsService>(builder: (context,settings,child){
               return MaterialApp(
@@ -72,6 +76,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 locale: settings.locale,
                 supportedLocales: AppLocalizations.supportedLocales,
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
+                // 全局兜底：窗口小于最小可用尺寸（手动拖小 / DPI 极限缩放）时
+                // 整体替换为占位页，防止固定尺寸组件溢出
+                builder: (context, child) => WindowSizeGuard(child: child),
               );
             });
           },

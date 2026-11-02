@@ -75,6 +75,9 @@
   "common_ui_init_failed": "Initialization failed...",
   "common_ui_operation_failed": "Operation failed. Please try again",
 
+  "common_ui_window_too_small_title": "Window too small",
+  "common_ui_window_too_small_hint": "Please enlarge the window, or lower the system display scaling and try again",
+
   "route_not_defined": "Route not defined: {name}",
 
   "units_page_title": "Reading Units",

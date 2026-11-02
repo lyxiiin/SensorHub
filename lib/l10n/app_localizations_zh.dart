@@ -211,6 +211,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_ui_operation_failed => '操作失败，请重试';
 
   @override
+  String get common_ui_window_too_small_title => '窗口过小';
+
+  @override
+  String get common_ui_window_too_small_hint => '请放大窗口，或调低系统显示缩放比例后重试';
+
+  @override
   String route_not_defined(String name) {
     return '未定义的路由: $name';
   }
@@ -629,6 +635,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get common_ui_operation_failed => '操作失敗，請重試';
+
+  @override
+  String get common_ui_window_too_small_title => '視窗過小';
+
+  @override
+  String get common_ui_window_too_small_hint => '請放大視窗，或調低系統顯示縮放比例後重試';
 
   @override
   String route_not_defined(String name) {
