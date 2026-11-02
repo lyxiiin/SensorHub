@@ -79,22 +79,24 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage>{
     ];
     return Consumer2<ProfileVM, SettingsService>(builder: (context, profileVM, settings, child){
       final themeModelSelectedValue = profileVM.tempSelectedValue ?? settings.themeMode;
-      return Column(
-        children: List.generate(themeModes.length, (index) {
-          return RadioListTile<ThemeMode>(
-            title: Text(
-              themeLabels[index],
-              style: TextStyle(
-                fontSize: 16.sp,
+      return RadioGroup<ThemeMode>(
+        groupValue: themeModelSelectedValue,
+        onChanged: (ThemeMode? value) {
+          profileVM.changedTempThemeValue(value);
+        },
+        child: Column(
+          children: List.generate(themeModes.length, (index) {
+            return RadioListTile<ThemeMode>(
+              title: Text(
+                themeLabels[index],
+                style: TextStyle(
+                  fontSize: 16.sp,
+                ),
               ),
-            ),
-            value: themeModes[index],
-            groupValue: themeModelSelectedValue,
-            onChanged: (ThemeMode? value) {
-              profileVM.changedTempThemeValue(value);
-            },
-          );
-        }).toList(),
+              value: themeModes[index],
+            );
+          }).toList(),
+        ),
       );
     });
   }

@@ -12,7 +12,7 @@ import 'package:sensor_hub/utils/app_logger.dart';
 // └──────────┴──────────┴───────────┴───────────┴───────┴──────────────────┴──────┘
 ///
 /// 输入: MQTT 收到的十六进制字符串，如 "AA550000000103010002..."
-/// 输出: List<Measurement>
+/// 输出: `List<Measurement>`
 abstract class PayloadDecoder {
   // ============================================================
   // SDTP Type ID → SensorType 映射表

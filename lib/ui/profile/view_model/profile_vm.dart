@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/services/settings_service.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
