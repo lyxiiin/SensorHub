@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/models/notification_message.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
+import 'package:sensor_hub/ui/core/responsive/app_breakpoints.dart';
 import 'package:sensor_hub/ui/core/ui/title_bar.dart';
 import 'package:sensor_hub/ui/notification/view_model/notification_vm.dart';
 
@@ -94,13 +95,12 @@ class NotificationScreen extends StatelessWidget{
 
 
 class _NotificationScreenContext extends StatelessWidget{
-  const _NotificationScreenContext({super.key});
+  const _NotificationScreenContext();
 
 
 
   @override
   Widget build(BuildContext context) {
-    final notificationVM = context.watch<NotificationVM>();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final appText = AppLocalizations.of(context);
@@ -117,7 +117,14 @@ class _NotificationScreenContext extends StatelessWidget{
           ),
           SizedBox(height: 16.h,),
           Expanded(
-            child: notificationList(colorScheme),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: Breakpoints.contentMaxWidth,
+                ),
+                child: notificationList(colorScheme),
+              ),
+            ),
           ),
         ],
       ),
@@ -179,7 +186,7 @@ class _NotificationScreenContext extends StatelessWidget{
         margin: EdgeInsets.zero,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          side: BorderSide(color: colorScheme.outline.withOpacity(0.12)),
+          side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.12)),
           borderRadius: BorderRadius.circular(12.r), // 稍大圆角更现代
         ),
         child: Padding(
@@ -195,7 +202,7 @@ class _NotificationScreenContext extends StatelessWidget{
                     height: 28.r,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: indicatorColor.withOpacity(0.15),
+                      color: indicatorColor.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -220,7 +227,7 @@ class _NotificationScreenContext extends StatelessWidget{
                           text: item.sensorName,
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: colorScheme.onSurface.withOpacity(0.7),
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -245,7 +252,7 @@ class _NotificationScreenContext extends StatelessWidget{
               Divider(
                 height: 1.h,
                 thickness: 0.8.h,
-                color: colorScheme.outline.withOpacity(0.12),
+                color: colorScheme.outline.withValues(alpha: 0.12),
               ),
 
               SizedBox(height: 10.h),
@@ -283,7 +290,7 @@ class _NotificationScreenContext extends StatelessWidget{
                 ),
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],

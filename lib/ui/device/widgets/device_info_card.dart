@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/route/routes.dart';
+import 'package:sensor_hub/ui/core/themes/app_colors.dart';
 import 'package:sensor_hub/ui/core/ui/confirm_dialog.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
@@ -119,58 +120,72 @@ class DeviceInfoCard extends StatelessWidget{
               thickness: 1.h,
               color: colorScheme.outline.withValues(alpha: 0.3),
             ),
-            Wrap(
-              spacing: 8.w,        // 水平间距
-              runSpacing: 8.h,     // 垂直间距
-              children: dateList.entries
-                  .where((entry) => (entry.value != null))
-                  .map((entry) {
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const double minItemWidth = 150;
+                final double maxW = constraints.maxWidth.isFinite
+                    ? constraints.maxWidth
+                    : minItemWidth; // 横向无界时兜底成单列
+                final int columns =
+                (maxW / (minItemWidth + 8.w)).floor().clamp(1, 4);
+                final double itemWidth = (maxW - 8.w * (columns - 1)) / columns;
+
+                return Wrap(
+                  spacing: 8.w,        // 水平间距
+                  runSpacing: 8.h,     // 垂直间距
+                  children: dateList.entries
+                      .where((entry) => (entry.value != null))
+                      .map((entry) {
                     return SizedBox(
-                      width: (MediaQuery.of(context).size.width - 24.w - 16.w - 24.w) / 2, // 粗略估算每行两个
+                      width: itemWidth,
                       child: Card(
-                        margin: EdgeInsets.zero,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8.r,
-                                height: 8.r,
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                ),
+                      margin: EdgeInsets.zero,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8.r,
+                              height: 8.r,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.successDark
+                                    : AppColors.success,
+                                shape: BoxShape.circle,
                               ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                  entry.key.localizedName(appText),
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              Spacer(),
-                              Text(
-                                  "${entry.value.formattedValue} ${entry.key.unit}",
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
+                            ),
+                            SizedBox(width: 6.w),
+                            Text(
+                              entry.key.localizedName(appText),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Spacer(),
+                            Text(
+                              "${entry.value.formattedValue} ${entry.key.unit}",
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                     );
                   }).toList(),
+                );
+              },
             ),
           ],
         ),

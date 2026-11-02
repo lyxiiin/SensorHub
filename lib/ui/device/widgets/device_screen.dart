@@ -9,7 +9,7 @@ import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
 import 'package:sensor_hub/ui/device/widgets/device_info_card.dart';
 
 import '../../../l10n/app_localizations.dart';
-
+import 'package:sensor_hub/ui/core/responsive/app_breakpoints.dart';
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key});
 
@@ -86,7 +86,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ],
             ),
           ),
-          Expanded(child: deviceList(colorScheme, appText)),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: Breakpoints.contentMaxWidth,
+                ),
+                child: deviceList(colorScheme, appText),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -154,9 +163,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
         .where((profile) => profile.groupId == groupId)
         .length;
   }
-
-  int _ungroupCount(DeviceVM vm) =>
-      vm.deviceProfiles.values.where((p) => p.groupId == null).length;
 
   /// 分组筛选按钮（替代原来那个 onPressed 为空的「全部设备」按钮）
   ///
