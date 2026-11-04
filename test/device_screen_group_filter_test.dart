@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/models/device_group.dart';
 import 'package:sensor_hub/data/models/device_profile.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
@@ -42,9 +43,11 @@ void main() {
     int? groupId,
   }) {
     vm.latestReadings[name] = {
-      SensorType.temperature: Measurement(
+      const SensorKey(SensorType.temperature, SensorChannel.external):
+          Measurement(
         configId: configId,
         sensorType: SensorType.temperature,
+        channel: SensorChannel.external,
         value: 2550,
         timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       ),
@@ -52,7 +55,9 @@ void main() {
     vm.deviceProfiles[name] = DeviceProfile(
       configId: configId,
       deviceName: name,
-      sensors: const [SensorType.temperature],
+      sensors: const [
+        SensorKey(SensorType.temperature, SensorChannel.external),
+      ],
       groupId: groupId,
     );
   }

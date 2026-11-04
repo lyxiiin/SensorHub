@@ -368,6 +368,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sensor_type_lux => 'Light';
 
   @override
+  String get sensor_channel_temperature_internal => 'Internal temperature';
+
+  @override
+  String get sensor_channel_temperature_external => 'External temperature';
+
+  @override
+  String get sensor_channel_humidity_internal => 'Internal humidity';
+
+  @override
+  String get sensor_channel_humidity_external => 'External humidity';
+
+  @override
   String get notification_empty => 'No messages yet';
 
   @override

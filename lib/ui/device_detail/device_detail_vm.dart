@@ -4,7 +4,7 @@ import 'package:sensor_hub/data/dao/device_group_dao.dart';
 import 'package:sensor_hub/data/dao/measurement_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
-import 'package:sensor_hub/data/models/sensor_type.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
 /// 设备详情页 ViewModel
@@ -68,8 +68,8 @@ class DeviceDetailVm extends ChangeNotifier {
   List<Measurement> history = [];
 
   // ── 图表相关 ────────────────────────────────────────────────────
-  List<SensorType> availableSensors = [];
-  SensorType? selectedType;
+  List<SensorKey> availableSensors = [];
+  SensorKey? selectedType;
   String selectedRange = '1d';
   List<Measurement> chartData = [];
 
@@ -107,10 +107,10 @@ class DeviceDetailVm extends ChangeNotifier {
     }
   }
 
-  /// 切换图表传感器
-  void selectSensor(SensorType type) {
-    if (type == selectedType) return;
-    selectedType = type;
+  /// 切换图表传感器（物理量 + 通道）
+  void selectSensor(SensorKey key) {
+    if (key == selectedType) return;
+    selectedType = key;
     _loadChartData();
   }
 
@@ -152,15 +152,15 @@ class DeviceDetailVm extends ChangeNotifier {
   }
 
   /// 从 device_latest 快照表加载各传感器最新读数，
-  /// 并按 SensorType 枚举顺序稳定排序，保证卡片顺序不跳动。
+  /// 并按 SensorKey 自然顺序（物理量 → 通道）稳定排序，保证卡片顺序不跳动。
   Future<void> _loadLatest() async {
     final latest = await _measurementDao.queryLatest(deviceId!);
-    history = SensorType.values
-        .where(latest.containsKey)
-        .map((type) => latest[type]!)
-        .toList();
-    availableSensors = history.map((m) => m.sensorType).toList();
+    history = latest.values.toList()..sort((a,b) => a.key.compareTo(b.key));
+
+    availableSensors = history.map((m) => m.key).toList();
     if (availableSensors.isEmpty) {
+      // 没有任何快照时清空选中项，避免 refresh 时仍按旧 key 查出一条没有卡片对应的曲线
+      selectedType = null;
       chartData = [];
       return;
     }
@@ -186,7 +186,7 @@ class DeviceDetailVm extends ChangeNotifier {
     try {
       chartData = await _measurementDao.queryHistory(
         configId: deviceId!,
-        type: selectedType!,
+        key: selectedType!,
         startTime: startTime,
       );
     } catch (e, stack) {

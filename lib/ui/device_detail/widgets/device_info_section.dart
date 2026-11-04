@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../core/i18n/sensor_type_l10n.dart';
@@ -10,11 +11,11 @@ import '../../core/i18n/sensor_type_l10n.dart';
 ///
 /// Shows the sensor icon + name, formatted value + unit,
 /// and the elapsed time since the last measurement.
-/// Tapping the card reports the sensor type via [onTap]
-/// (e.g. to link it to the history chart).
+/// Tapping the card reports the sensor key (physical quantity + channel)
+/// via [onTap] (e.g. to link it to the history chart).
 class DeviceInfoSection extends StatelessWidget {
   final Measurement item;
-  final ValueChanged<SensorType>? onTap;
+  final ValueChanged<SensorKey>? onTap;
 
   const DeviceInfoSection({super.key, required this.item, this.onTap});
 
@@ -41,6 +42,7 @@ class DeviceInfoSection extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final sensor = item.sensorType;
+    final sensorKey = item.key;
 
     final minutesAgo =
         ((DateTime.now().millisecondsSinceEpoch ~/ 1000 - item.timestamp) / 60)
@@ -59,7 +61,7 @@ class DeviceInfoSection extends StatelessWidget {
       color: colorScheme.surface,
       child: InkWell(
         borderRadius: BorderRadius.circular(_cardBorderRadius.r),
-        onTap: onTap == null ? null : () => onTap!(item.sensorType),
+        onTap: onTap == null ? null : () => onTap!(item.key),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: _cardMinHeight),
           child: Padding(
@@ -73,7 +75,7 @@ class DeviceInfoSection extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // ── Header: icon + sensor name ────────────────────────
-                _SensorHeader(sensor: sensor),
+                _SensorHeader(sensorKey: sensorKey),
 
                 SizedBox(height: _headerToValueGap.h),
 
@@ -97,31 +99,38 @@ class DeviceInfoSection extends StatelessWidget {
 }
 
 /// Header row showing the sensor icon badge and display name.
+///
+/// 图标/颜色取物理量（[SensorKey.type]），名称取 (物理量, 通道) 的本地化文案，
+/// 因此同一物理量的外部/内部两路会显示成两张不同名称的卡片。
 class _SensorHeader extends StatelessWidget {
-  final SensorType sensor;
+  final SensorKey sensorKey;
 
-  const _SensorHeader({required this.sensor});
+  const _SensorHeader({required this.sensorKey});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
+    final sensorType = sensorKey.type;
 
     return Row(
       children: [
         Container(
           padding: EdgeInsets.all(DeviceInfoSection._iconContainerPadding.w),
           decoration: BoxDecoration(
-            color: Color(sensor.iconColor).withValues(alpha: 0.15),
+            color: Color(sensorType.iconColor).withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(
               DeviceInfoSection._iconContainerRadius.r,
             ),
           ),
           child: SvgPicture.asset(
-            sensor.icon,
+            sensorType.icon,
             width: DeviceInfoSection._sensorIconSize.w,
             height: DeviceInfoSection._sensorIconSize.w,
-            colorFilter: ColorFilter.mode(Color(sensor.iconColor), BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(
+              Color(sensorType.iconColor),
+              BlendMode.srcIn,
+            ),
           ),
         ),
         SizedBox(width: DeviceInfoSection._iconNameGap.w),
@@ -130,7 +139,7 @@ class _SensorHeader extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              sensor.localizedName(l10n),
+              sensorKey.localizedName(l10n),
               maxLines: 1,
               softWrap: false,
               style: TextStyle(

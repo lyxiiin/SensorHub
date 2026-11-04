@@ -3,6 +3,8 @@ import 'package:sensor_hub/data/models/measurement.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
+import '../models/sensor_channel.dart';
+
 /// SDTP — 传感器数据传输协议解码器
 ///
 /// 帧结构:
@@ -13,17 +15,29 @@ import 'package:sensor_hub/utils/app_logger.dart';
 ///
 /// 输入: MQTT 收到的十六进制字符串，如 "AA550000000103010002..."
 /// 输出: `List<Measurement>`
+///
+/// TLV Value 编码约定（App 侧唯一事实来源，需与固件协议文档保持一致）：
+/// - **2 字节**：大端 uint16，数值是「物理量的整数形式」，如 CO2 = 800 ppm；
+/// - **4 字节**：大端 IEEE 754 float32，数值是「物理量的浮点形式」，如温度 25.5 ℃。
+///
+/// 两种线格式统一按 `storedValue = 物理量 × SensorType.storageScale` 落库，
+/// 因此同一物理量无论用哪种线格式上报，落库值与显示值都一致
+/// （例：温度 25.0 用 2 字节 `0x0019` 或 4 字节 float 上报，落库都是 2500、显示都是 25.00）。
 abstract class PayloadDecoder {
   // ============================================================
-  // SDTP Type ID → SensorType 映射表
+  // SDTP Type ID → (SensorType, SensorChannel) 映射表
+  //
+  // TypeId 表示「数据点/通道」而非「传感器型号」：0x02/0x04 同为温度，
+  // 但分属内部/外部两路，必须映射到不同的 SensorChannel，否则两路数据
+  // 会因 SensorType 相同而互相覆盖（见重构方案 §2.2 / §14）。
   // 新增传感器：在此 Map 中添加一行即可
   // ============================================================
-  static final Map<int, SensorType> _typeIdToSensorType = {
-    0x01: SensorType.co2,         // SCD41 CO2 (uint16)
-    0x02: SensorType.temperature, // SCD41 温度 (float)
-    0x03: SensorType.humidity,    // SCD41 湿度 (float)
-    0x04: SensorType.temperature, // SHT40 温度 (float)
-    0x05: SensorType.humidity,    // SHT40 湿度 (float)
+  static const Map<int, SensorKey> _typeIdToKey = {
+    0x01: SensorKey(SensorType.carbon_dioxide, SensorChannel.primary),
+    0x02: SensorKey(SensorType.temperature, SensorChannel.internal),
+    0x03: SensorKey(SensorType.humidity, SensorChannel.internal),
+    0x04: SensorKey(SensorType.temperature, SensorChannel.external),
+    0x05: SensorKey(SensorType.humidity, SensorChannel.external),
   };
 
   // ============================================================
@@ -85,23 +99,38 @@ abstract class PayloadDecoder {
             'available=${bytes.length - 1 - offset})', tag: 'SDTP');
         break;
       }
-
-      final sensorType = _typeIdToSensorType[typeId];
-      if (sensorType == null) {
+      final key = _typeIdToKey[typeId];
+      if(key == null){
         logD('未知传感器类型 ID=0x${typeId.toRadixString(16)} (length=$valueLen)，跳过', tag: 'SDTP');
         offset += valueLen;
         continue;
       }
+      final sensorType = key.type;
 
-      // 步骤7: 根据 Value 长度解析
+      // 步骤7: 解析 Value 得到「物理量」，再统一换算为落库整数。
+      //
+      // 线格式约定见文件头：2 字节 = 物理量的整数形式，4 字节 = 物理量的
+      // 浮点形式；两者都乘 storageScale，保证同一物理量两种线格式口径一致。
       final int storedValue;
       if (valueLen == 2) {
-        // uint16 大端序（CO2 等整数类型）
-        storedValue = (bytes[offset] << 8) | bytes[offset + 1];
+        // uint16 大端序（无符号，不能表示负数；负数物理量必须用 4 字节 float）
+        final int physicalValue = (bytes[offset] << 8) | bytes[offset + 1];
+        storedValue = physicalValue * sensorType.storageScale;
       } else if (valueLen == 4) {
         // float IEEE 754 大端序（温度、湿度等浮点类型）
-        final double floatValue = _parseFloat32(bytes, offset);
-        storedValue = (floatValue * sensorType.storageScale).round();
+        final double physicalValue = _parseFloat32(bytes, offset);
+        if (!physicalValue.isFinite) {
+          // NaN / ±Inf 不是有效读数（固件异常、驱动失败等），跳过该条，
+          // 避免 round() 抛异常导致同帧其它合法记录一起丢失。
+          logW(
+            '非法浮点值 (typeId=0x${typeId.toRadixString(16)}, '
+            'value=$physicalValue)，跳过',
+            tag: 'SDTP',
+          );
+          offset += valueLen;
+          continue;
+        }
+        storedValue = (physicalValue * sensorType.storageScale).round();
       } else {
         logW('不支持的 Value 长度 $valueLen (typeId=0x${typeId.toRadixString(16)})，跳过', tag: 'SDTP');
         offset += valueLen;
@@ -111,6 +140,7 @@ abstract class PayloadDecoder {
       results.add(Measurement(
         configId: configId,
         sensorType: sensorType,
+        channel: key.channel,
         value: storedValue,
         timestamp: timestamp,
       ));

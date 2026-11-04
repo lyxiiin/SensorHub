@@ -791,6 +791,30 @@ abstract class AppLocalizations {
   /// **'光'**
   String get sensor_type_lux;
 
+  /// No description provided for @sensor_channel_temperature_internal.
+  ///
+  /// In zh, this message translates to:
+  /// **'内部温度'**
+  String get sensor_channel_temperature_internal;
+
+  /// No description provided for @sensor_channel_temperature_external.
+  ///
+  /// In zh, this message translates to:
+  /// **'外部温度'**
+  String get sensor_channel_temperature_external;
+
+  /// No description provided for @sensor_channel_humidity_internal.
+  ///
+  /// In zh, this message translates to:
+  /// **'内部湿度'**
+  String get sensor_channel_humidity_internal;
+
+  /// No description provided for @sensor_channel_humidity_external.
+  ///
+  /// In zh, this message translates to:
+  /// **'外部湿度'**
+  String get sensor_channel_humidity_external;
+
   /// No description provided for @notification_empty.
   ///
   /// In zh, this message translates to:

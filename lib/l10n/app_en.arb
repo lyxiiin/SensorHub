@@ -129,6 +129,11 @@
   "sensor_type_noise": "Noise",
   "sensor_type_lux": "Light",
 
+  "sensor_channel_temperature_internal": "Internal temperature",
+  "sensor_channel_temperature_external": "External temperature",
+  "sensor_channel_humidity_internal": "Internal humidity",
+  "sensor_channel_humidity_external": "External humidity",
+
   "notification_empty": "No messages yet",
   "notification_over_limit": "Over Limit",
   "notification_sent_time": "Sent at {time}",

@@ -112,11 +112,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
         children: [
           Image.asset("assets/images/sensor_hub.png", height: 48.h),
           const Spacer(), // 更简洁的 Expanded(child: SizedBox())
-          IconButton(
-            icon: Icon(Icons.search, color: colorScheme.onSurface),
-            iconSize: 28.h,
-            onPressed: () {},
-          ),
+          // IconButton(
+          //   icon: Icon(Icons.search, color: colorScheme.onSurface),
+          //   iconSize: 28.h,
+          //   onPressed: () {},
+          // ),
           IconButton(
             icon: Icon(Icons.add, color: colorScheme.onSurface),
             iconSize: 28.h,

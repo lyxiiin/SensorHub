@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
-import 'package:sensor_hub/data/models/sensor_type.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/route/route_utils.dart';
 import 'package:sensor_hub/route/routes.dart';
@@ -465,8 +465,8 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
   }
 
   /// 点击传感器卡片：联动选择图表中的传感器，并滚动到图表区域
-  void _onSensorCardTap(SensorType type) {
-    context.read<DeviceDetailVm>().selectSensor(type);
+  void _onSensorCardTap(SensorKey key) {
+    context.read<DeviceDetailVm>().selectSensor(key);
     final chartContext = _chartSectionKey.currentContext;
     if (chartContext != null) {
       Scrollable.ensureVisible(

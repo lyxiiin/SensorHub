@@ -155,6 +155,11 @@
   "sensor_type_noise": "噪声",
   "sensor_type_lux": "光",
 
+  "sensor_channel_temperature_internal": "内部温度",
+  "sensor_channel_temperature_external": "外部温度",
+  "sensor_channel_humidity_internal": "内部湿度",
+  "sensor_channel_humidity_external": "外部湿度",
+
   "notification_empty": "暂未收到消息",
   "notification_over_limit": "超限",
   "notification_sent_time": "发送时间: {time}",

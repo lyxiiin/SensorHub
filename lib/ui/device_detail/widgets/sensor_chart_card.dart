@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/ui/core/i18n/sensor_type_l10n.dart';
@@ -15,13 +16,17 @@ import 'package:sensor_hub/ui/core/i18n/sensor_type_l10n.dart';
 /// - [selectedType] / [selectedRange] 为受控状态，交互通过回调上报；
 /// - [isLoading] 控制加载占位，[chartData] 为空时展示空态；
 /// - 图表主体为带渐变填充的折线图，附当前 / 最高 / 最低 / 平均统计摘要。
+///
+/// 传感器筛选以 [SensorKey]（物理量 + 通道）为单位：同一物理量的
+/// 外部/内部两路是下拉框里的两个独立选项、两条独立曲线；颜色、单位、
+/// 精度等展示属性仍由物理量 [SensorKey.type] 决定。
 class SensorChartCard extends StatelessWidget {
-  final List<SensorType> availableSensors;
+  final List<SensorKey> availableSensors;
   final List<Measurement> chartData;
-  final SensorType? selectedType;
+  final SensorKey? selectedType;
   final String selectedRange;
   final bool isLoading;
-  final ValueChanged<SensorType>? onSensorTypeChanged;
+  final ValueChanged<SensorKey>? onSensorTypeChanged;
   final ValueChanged<String>? onTimeRangeChanged;
 
   const SensorChartCard({
@@ -94,13 +99,13 @@ class SensorChartCard extends StatelessWidget {
   // ── 工具栏：传感器选择 + 时间范围 ───────────────────────────────
   Widget _buildToolbar(
     ColorScheme colorScheme,
-    SensorType? sensor,
+    SensorKey? sensor,
     AppLocalizations l10n,
   ) {
     return Row(
       children: [
         Expanded(
-          child: DropdownButton<SensorType>(
+          child: DropdownButton<SensorKey>(
             value: sensor,
             isExpanded: true,
             underline: const SizedBox(),
@@ -110,11 +115,11 @@ class SensorChartCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
             icon: Icon(Icons.expand_more_rounded, color: colorScheme.onSurfaceVariant),
-            items: availableSensors.map((type) {
-              return DropdownMenuItem<SensorType>(
-                value: type,
+            items: availableSensors.map((key) {
+              return DropdownMenuItem<SensorKey>(
+                value: key,
                 child: Text(
-                  '${type.localizedName(l10n)} (${type.unit})',
+                  '${key.localizedName(l10n)} (${key.type.unit})',
                   style: TextStyle(fontSize: 13.sp),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -211,8 +216,8 @@ class SensorChartCard extends StatelessWidget {
   }
 
   // ── 图表主体 ────────────────────────────────────────────────────
-  Widget _buildChart(ColorScheme colorScheme, SensorType sensor) {
-    final color = Color(sensor.iconColor);
+  Widget _buildChart(ColorScheme colorScheme, SensorKey sensor) {
+    final color = Color(sensor.type.iconColor);
     final spots = chartData.map((entry) {
       return FlSpot(entry.timestamp.toDouble(), entry.sensorType.restoreValue(entry.value));
     }).toList();
@@ -275,7 +280,7 @@ class SensorChartCard extends StatelessWidget {
                   meta: meta,
                   space: 8,
                   child: Text(
-                    _formatValue(value, sensor) + sensor.unit,
+                    _formatValue(value, sensor) + sensor.type.unit,
                     style: TextStyle(
                       fontSize: 10.sp,
                       color: colorScheme.onSurfaceVariant,
@@ -370,7 +375,7 @@ class SensorChartCard extends StatelessWidget {
   // ── 统计摘要：当前 / 最高 / 最低 / 平均 ─────────────────────────
   Widget _buildSummary(
     ColorScheme colorScheme,
-    SensorType sensor,
+    SensorKey sensor,
     AppLocalizations l10n,
   ) {
     final values = chartData
@@ -380,7 +385,7 @@ class SensorChartCard extends StatelessWidget {
     final maxV = values.reduce((a, b) => a > b ? a : b);
     final minV = values.reduce((a, b) => a < b ? a : b);
     final avgV = values.reduce((a, b) => a + b) / values.length;
-    final unit = sensor.unit;
+    final unit = sensor.type.unit;
 
     Widget item(String label, String value) {
       return Expanded(
@@ -435,8 +440,8 @@ class SensorChartCard extends StatelessWidget {
   }
 
   // ── 格式化工具 ──────────────────────────────────────────────────
-  static String _formatValue(double value, SensorType sensor) {
-    return value.toStringAsFixed(sensor.decimalPlaces);
+  static String _formatValue(double value, SensorKey sensor) {
+    return value.toStringAsFixed(sensor.type.decimalPlaces);
   }
 
   static String _formatTime(int timestampSec, {required bool isLongRange}) {

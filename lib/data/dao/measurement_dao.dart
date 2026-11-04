@@ -1,6 +1,6 @@
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
-import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/data/services/sqlite_service.dart';
 import 'package:sensor_hub/utils/app_logger.dart';
 
@@ -20,11 +20,12 @@ class MeasurementDao {
       batch.insert('measurements', {
         'config_id': m.configId,
         'sensor_type': m.sensorType.name,
+        'sensor_channel':m.channel.name,
         'timestamp': m.timestamp,
         'value': m.value,
       });
-      batch.rawInsert('''INSERT OR REPLACE INTO device_latest (config_id, sensor_type, timestamp, value) VALUES (?, ?, ?, ?)''',
-        [m.configId, m.sensorType.name, m.timestamp, m.value]);
+      batch.rawInsert('''INSERT OR REPLACE INTO device_latest (config_id, sensor_type, sensor_channel, timestamp, value) VALUES (?, ?, ?, ?, ?)''',
+        [m.configId, m.sensorType.name, m.channel.name, m.timestamp, m.value]);
     }
     try {
       await batch.commit(noResult: true);
@@ -38,13 +39,14 @@ class MeasurementDao {
   // 查询指定设备的历史数据
   Future<List<Measurement>> queryHistory({
     required int configId,
-    required SensorType type,
+    required SensorKey key,
     int? startTime,
     int? endTime,
   }) async {
     final database = await db;
-    String where = 'config_id = ? AND sensor_type = ?';
-    List<dynamic> whereArgs = [configId, type.name];
+    // (物理量, 通道) 两维定位：同一物理量的不同通道是独立序列
+    String where = 'config_id = ? AND sensor_type = ? AND sensor_channel = ?';
+    List<dynamic> whereArgs = [configId, key.type.name, key.channel.name];
     if(startTime != null){
       where += ' AND timestamp >= ?';
       whereArgs.add(startTime);
@@ -64,17 +66,17 @@ class MeasurementDao {
   }
 
   // 查询指定设备最新值
-  Future<Map<SensorType, Measurement>> queryLatest(int configId) async {
+  Future<Map<SensorKey, Measurement>> queryLatest(int configId) async {
     final database = await db;
     final List<Map<String, dynamic>> maps = await database.query(
       'device_latest',
       where: 'config_id = ?',
       whereArgs: [configId],
     );
-    final result = <SensorType, Measurement>{};
+    final result = <SensorKey, Measurement>{};
     for (final map in maps){
        final m = Measurement.fromLatestMap(map);
-       result[m.sensorType] = m;
+       result[m.key] = m;
     }
     return result;
   }
@@ -82,13 +84,14 @@ class MeasurementDao {
   // SQL级别阈值查询，查询指定设备、指定传感器类型、指定数值范围
   Future<List<Measurement>> queryByThreshold({
     required int configId,
-    required SensorType type,
+    required SensorKey key,
     int? maxValue,
     int? minValue
   }) async {
     final database = await db;
-    String where = 'config_id = ? AND sensor_type = ?';
-    List<dynamic> whereArgs = [configId,type.name];
+    // 同上：按 (物理量, 通道) 过滤，避免内外两路数据混在一起
+    String where = 'config_id = ? AND sensor_type = ? AND sensor_channel = ?';
+    List<dynamic> whereArgs = [configId, key.type.name, key.channel.name];
     if (maxValue != null){
       where += ' AND value <= ?';
       whereArgs.add(maxValue);

@@ -362,6 +362,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sensor_type_lux => '光';
 
   @override
+  String get sensor_channel_temperature_internal => '内部温度';
+
+  @override
+  String get sensor_channel_temperature_external => '外部温度';
+
+  @override
+  String get sensor_channel_humidity_internal => '内部湿度';
+
+  @override
+  String get sensor_channel_humidity_external => '外部湿度';
+
+  @override
   String get notification_empty => '暂未收到消息';
 
   @override
@@ -786,6 +798,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get sensor_type_lux => '光';
+
+  @override
+  String get sensor_channel_temperature_internal => '內部溫度';
+
+  @override
+  String get sensor_channel_temperature_external => '外部溫度';
+
+  @override
+  String get sensor_channel_humidity_internal => '內部濕度';
+
+  @override
+  String get sensor_channel_humidity_external => '外部濕度';
 
   @override
   String get notification_empty => '尚未收到訊息';

@@ -18,7 +18,7 @@ class SqliteService {
 
   SqliteService._internal();
 
-  static const int _databaseVersion = 5;
+  static const int _databaseVersion = 6;
 
   /// 桌面端（Windows / Linux）sqflite 没有原生实现，必须切到 FFI。
   ///
@@ -155,6 +155,7 @@ class SqliteService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         config_id INTEGER NOT NULL,
         sensor_type TEXT NOT NULL,
+        sensor_channel TEXT NOT NULL DEFAULT 'primary',
         value INTEGER NOT NULL,
         timestamp INTEGER NOT NULL,
         FOREIGN KEY (config_id) REFERENCES device_configs(configId) ON DELETE CASCADE
@@ -164,7 +165,7 @@ class SqliteService {
     // 为常用查询创建索引
     await db.execute('''
       CREATE INDEX idx_measurements_config_type_time
-        ON measurements(config_id, sensor_type, timestamp);
+        ON measurements(config_id, sensor_type, sensor_channel, timestamp);
     ''');
 
     // 设备最新快照表
@@ -172,9 +173,10 @@ class SqliteService {
       CREATE TABLE device_latest (
         config_id INTEGER NOT NULL,
         sensor_type TEXT NOT NULL,
+        sensor_channel TEXT NOT NULL DEFAULT 'primary',
         value INTEGER NOT NULL,
         timestamp INTEGER NOT NULL,
-        PRIMARY KEY (config_id, sensor_type),
+        PRIMARY KEY (config_id, sensor_type, sensor_channel),
         FOREIGN KEY (config_id) REFERENCES device_configs(configId) ON DELETE CASCADE
       );
     ''');
@@ -327,6 +329,57 @@ class SqliteService {
           'ALTER TABLE device_group ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0',
         );
       }
+    }
+    if (oldVersion < 6) {
+      // v6：传感器通道（SensorChannel）重构，见 doc/sensor_channel_refactor_plan.md §3。
+      //
+      // measurements 用 ADD COLUMN 而非重建表：sensor_channel 会追加到列尾，
+      // 与 _onCreate 的列顺序不同（列集合一致）；DAO 全部按列名取值，不依赖位置。
+      await db.execute(
+        "ALTER TABLE measurements ADD COLUMN sensor_channel TEXT NOT NULL DEFAULT 'primary'",
+      );
+      await db.execute('DROP INDEX IF EXISTS idx_measurements_config_type_time');
+      await db.execute('''
+        CREATE INDEX idx_measurements_config_type_time
+          ON measurements(config_id, sensor_type, sensor_channel, timestamp);
+      ''');
+
+      // device_latest 主键要加 channel，SQLite 不支持改主键
+      // → 改名 → 建新表 → 搬数据 → 删旧表
+      await db.execute('ALTER TABLE device_latest RENAME TO device_latest_old');
+      await db.execute('''
+        CREATE TABLE device_latest (
+          config_id INTEGER NOT NULL,
+          sensor_type TEXT NOT NULL,
+          sensor_channel TEXT NOT NULL DEFAULT 'primary',
+          value INTEGER NOT NULL,
+          timestamp INTEGER NOT NULL,
+          PRIMARY KEY (config_id, sensor_type, sensor_channel),
+          FOREIGN KEY (config_id) REFERENCES device_configs(configId) ON DELETE CASCADE
+        );
+      ''');
+      await db.execute('''
+        INSERT INTO device_latest
+          (config_id, sensor_type, sensor_channel, value, timestamp)
+        SELECT config_id, sensor_type, 'primary', value, timestamp
+          FROM device_latest_old;
+      ''');
+      await db.execute('DROP TABLE device_latest_old');
+
+      // 旧数据归属（方案 §3.3 方案 A）：旧库无法区分两路来源，
+      // temperature / humidity 统一归入 external（环境值），其余保持 primary。
+      await db.execute(
+        "UPDATE measurements SET sensor_channel = 'external' "
+        "WHERE sensor_type IN ('temperature', 'humidity')",
+      );
+      await db.execute(
+        "UPDATE device_latest SET sensor_channel = 'external' "
+        "WHERE sensor_type IN ('temperature', 'humidity')",
+      );
+
+      // 迁移自检：发现外键违规直接抛错 → 整个升级事务回滚
+      final violations = await db.rawQuery('PRAGMA foreign_key_check');
+      if (violations.isNotEmpty) throw Exception('外键迁移自检失败: $violations');
     }
   }
 }

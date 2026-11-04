@@ -9,6 +9,7 @@ import 'package:sensor_hub/data/dao/measurement_dao.dart';
 import 'package:sensor_hub/data/models/device_config.dart';
 import 'package:sensor_hub/data/models/device_group.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 import 'package:sensor_hub/l10n/app_localizations.dart';
 import 'package:sensor_hub/ui/device/view_model/device_vm.dart';
@@ -49,12 +50,14 @@ void main() {
       Measurement(
         configId: 1,
         sensorType: SensorType.temperature,
+        channel: SensorChannel.external,
         value: 2550, // 25.5℃
         timestamp: now - 3600,
       ),
       Measurement(
         configId: 1,
         sensorType: SensorType.temperature,
+        channel: SensorChannel.external,
         value: 3100, // 31.0℃
         timestamp: now,
       ),
@@ -62,24 +65,54 @@ void main() {
   }
 
   group('DeviceInfoSection', () {
-    testWidgets('渲染传感器名称、格式化数值与单位', (tester) async {
+    Measurement reading(SensorChannel channel) => Measurement(
+          configId: 1,
+          sensorType: SensorType.temperature,
+          channel: channel,
+          value: 2550,
+          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        );
+
+    testWidgets('渲染外部温度：通道名、格式化数值与单位', (tester) async {
       usePhoneSurface(tester);
+      await tester.pumpWidget(
+        wrap(DeviceInfoSection(item: reading(SensorChannel.external))),
+      );
+
+      expect(find.text('外部温度'), findsOneWidget);
+      expect(find.text('25.50'), findsOneWidget);
+      expect(find.text('℃'), findsOneWidget);
+    });
+
+    testWidgets('同一物理量的内部通道显示为「内部温度」', (tester) async {
+      usePhoneSurface(tester);
+      await tester.pumpWidget(
+        wrap(DeviceInfoSection(item: reading(SensorChannel.internal))),
+      );
+
+      expect(find.text('内部温度'), findsOneWidget);
+      expect(find.text('外部温度'), findsNothing);
+      // 图标 / 单位仍复用物理量（温度）配置
+      expect(find.text('℃'), findsOneWidget);
+    });
+
+    testWidgets('点击卡片回调携带 (物理量, 通道) 键', (tester) async {
+      usePhoneSurface(tester);
+      SensorKey? tapped;
       await tester.pumpWidget(
         wrap(
           DeviceInfoSection(
-            item: Measurement(
-              configId: 1,
-              sensorType: SensorType.temperature,
-              value: 2550,
-              timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-            ),
+            item: reading(SensorChannel.internal),
+            onTap: (key) => tapped = key,
           ),
         ),
       );
 
-      expect(find.text('温度'), findsOneWidget);
-      expect(find.text('25.50'), findsOneWidget);
-      expect(find.text('℃'), findsOneWidget);
+      await tester.tap(find.byType(DeviceInfoSection));
+      expect(
+        tapped,
+        const SensorKey(SensorType.temperature, SensorChannel.internal),
+      );
     });
   });
 
@@ -90,19 +123,22 @@ void main() {
         wrap(
           SensorChartCard(
             availableSensors: const [
-              SensorType.temperature,
-              SensorType.humidity,
+              SensorKey(SensorType.temperature, SensorChannel.external),
+              SensorKey(SensorType.humidity, SensorChannel.external),
             ],
             chartData: temperatureHistory(),
-            selectedType: SensorType.temperature,
+            selectedType: const SensorKey(
+              SensorType.temperature,
+              SensorChannel.external,
+            ),
             selectedRange: '24h',
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // 工具栏
-      expect(find.text('温度 (℃)'), findsOneWidget);
+      // 工具栏（通道名 + 物理量单位）
+      expect(find.text('外部温度 (℃)'), findsOneWidget);
       expect(find.text('1d'), findsOneWidget);
       expect(find.text('7d'), findsOneWidget);
       // 统计摘要（温度保留 2 位小数；Text.rich 需用 textContaining 匹配）
@@ -120,9 +156,14 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const SensorChartCard(
-            availableSensors: [SensorType.temperature],
+            availableSensors: [
+              SensorKey(SensorType.temperature, SensorChannel.external),
+            ],
             chartData: [],
-            selectedType: SensorType.temperature,
+            selectedType: SensorKey(
+              SensorType.temperature,
+              SensorChannel.external,
+            ),
             selectedRange: '1d',
           ),
         ),
@@ -137,9 +178,14 @@ void main() {
       await tester.pumpWidget(
         wrap(
           const SensorChartCard(
-            availableSensors: [SensorType.temperature],
+            availableSensors: [
+              SensorKey(SensorType.temperature, SensorChannel.external),
+            ],
             chartData: [],
-            selectedType: SensorType.temperature,
+            selectedType: SensorKey(
+              SensorType.temperature,
+              SensorChannel.external,
+            ),
             selectedRange: '1d',
             isLoading: true,
           ),
@@ -156,9 +202,14 @@ void main() {
       await tester.pumpWidget(
         wrap(
           SensorChartCard(
-            availableSensors: const [SensorType.temperature],
+            availableSensors: const [
+              SensorKey(SensorType.temperature, SensorChannel.external),
+            ],
             chartData: temperatureHistory(),
-            selectedType: SensorType.temperature,
+            selectedType: const SensorKey(
+              SensorType.temperature,
+              SensorChannel.external,
+            ),
             selectedRange: '1d',
             onTimeRangeChanged: (range) => changed = range,
           ),
@@ -170,31 +221,40 @@ void main() {
       expect(changed, '1d');
     });
 
-    testWidgets('切换传感器下拉上报回调', (tester) async {
+    testWidgets('切换传感器下拉上报回调（同物理量不同通道是两项）', (tester) async {
       usePhoneSurface(tester);
-      SensorType? changed;
+      SensorKey? changed;
       await tester.pumpWidget(
         wrap(
           SensorChartCard(
             availableSensors: const [
-              SensorType.temperature,
-              SensorType.humidity,
+              SensorKey(SensorType.temperature, SensorChannel.external),
+              SensorKey(SensorType.temperature, SensorChannel.internal),
+              SensorKey(SensorType.humidity, SensorChannel.external),
             ],
             chartData: temperatureHistory(),
-            selectedType: SensorType.temperature,
+            selectedType: const SensorKey(
+              SensorType.temperature,
+              SensorChannel.external,
+            ),
             selectedRange: '1d',
-            onSensorTypeChanged: (type) => changed = type,
+            onSensorTypeChanged: (key) => changed = key,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('温度 (℃)'));
+      // 下拉里温度的两路是独立选项，文案不同、value 也不同
+      await tester.tap(find.text('外部温度 (℃)'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('湿度 (%)').last);
+      expect(find.text('内部温度 (℃)'), findsOneWidget);
+      await tester.tap(find.text('内部温度 (℃)').last);
       await tester.pumpAndSettle();
 
-      expect(changed, SensorType.humidity);
+      expect(
+        changed,
+        const SensorKey(SensorType.temperature, SensorChannel.internal),
+      );
     });
   });
 
@@ -260,21 +320,26 @@ void main() {
         ),
         measurementDao: _FakeMeasurementDao(
           latest: {
-            SensorType.temperature: Measurement(
+            const SensorKey(SensorType.temperature, SensorChannel.external):
+                Measurement(
               configId: 1,
               sensorType: SensorType.temperature,
+              channel: SensorChannel.external,
               value: 2550,
               timestamp: now,
             ),
-            SensorType.humidity: Measurement(
+            const SensorKey(SensorType.humidity, SensorChannel.external):
+                Measurement(
               configId: 1,
               sensorType: SensorType.humidity,
+              channel: SensorChannel.external,
               value: 6500,
               timestamp: now,
             ),
-            SensorType.co2: Measurement(
+            const SensorKey(SensorType.carbon_dioxide, SensorChannel.primary):
+                Measurement(
               configId: 1,
-              sensorType: SensorType.co2,
+              sensorType: SensorType.carbon_dioxide,
               value: 800,
               timestamp: now,
             ),
@@ -283,12 +348,14 @@ void main() {
             Measurement(
               configId: 1,
               sensorType: SensorType.temperature,
+              channel: SensorChannel.external,
               value: 2550,
               timestamp: now - 3600,
             ),
             Measurement(
               configId: 1,
               sensorType: SensorType.temperature,
+              channel: SensorChannel.external,
               value: 3100,
               timestamp: now,
             ),
@@ -310,12 +377,90 @@ void main() {
       expect(find.textContaining('AABBCCDDEEFF'), findsOneWidget);
       expect(find.text('车间A'), findsOneWidget);
       expect(find.text('在线'), findsOneWidget);
-      // 传感器卡片
-      expect(find.text('温度'), findsOneWidget);
-      expect(find.text('湿度'), findsOneWidget);
+      // 传感器卡片（通道名由 (物理量, 通道) 决定）
+      expect(find.text('外部温度'), findsOneWidget);
+      expect(find.text('外部湿度'), findsOneWidget);
       expect(find.text('二氧化碳'), findsOneWidget);
       // 图表统计摘要（温度数据）
       expect(find.textContaining('31.00'), findsWidgets);
+    });
+
+    testWidgets('同一物理量的内外两路各自成卡，图表下拉可独立选择', (tester) async {
+      usePhoneSurface(tester);
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final vm = DeviceDetailVm(
+        configDao: _FakeConfigDao(
+          config: DeviceConfig(
+            configId: 1,
+            deviceName: '环境监测站',
+            broker: '127.0.0.1',
+            port: 1883,
+            clientId: 'c1',
+            upTopic: 'env/AA/data',
+            downTopic: 'env/AA/cmd',
+            username: 'u',
+            password: 'p',
+            macAddress: 'AABBCCDDEEFF',
+          ),
+        ),
+        measurementDao: _FakeMeasurementDao(
+          latest: {
+            const SensorKey(SensorType.temperature, SensorChannel.external):
+                Measurement(
+              configId: 1,
+              sensorType: SensorType.temperature,
+              channel: SensorChannel.external,
+              value: 1830,
+              timestamp: now,
+            ),
+            const SensorKey(SensorType.temperature, SensorChannel.internal):
+                Measurement(
+              configId: 1,
+              sensorType: SensorType.temperature,
+              channel: SensorChannel.internal,
+              value: 2550,
+              timestamp: now,
+            ),
+            const SensorKey(SensorType.humidity, SensorChannel.external):
+                Measurement(
+              configId: 1,
+              sensorType: SensorType.humidity,
+              channel: SensorChannel.external,
+              value: 4560,
+              timestamp: now,
+            ),
+            const SensorKey(SensorType.humidity, SensorChannel.internal):
+                Measurement(
+              configId: 1,
+              sensorType: SensorType.humidity,
+              channel: SensorChannel.internal,
+              value: 5000,
+              timestamp: now,
+            ),
+          },
+          history: temperatureHistory(),
+        ),
+      );
+      await tester.pumpWidget(
+        wrap(
+          ChangeNotifierProvider.value(
+            value: vm,
+            child: const DeviceDetailPage(deviceId: 1),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 四张卡片：内/外温度、内/外湿度
+      expect(find.text('外部温度'), findsOneWidget);
+      expect(find.text('内部温度'), findsOneWidget);
+      expect(find.text('外部湿度'), findsOneWidget);
+      expect(find.text('内部湿度'), findsOneWidget);
+      // 卡片顺序由 SensorKey.compareTo 决定：同物理量内 外部(1) 在 内部(2) 之前，
+      // 双列网格中先渲染的卡片在左侧
+      final externalX = tester.getTopLeft(find.text('外部温度')).dx;
+      final internalX = tester.getTopLeft(find.text('内部温度')).dx;
+      expect(externalX, lessThan(internalX));
     });
 
     testWidgets('设备所属分组已被删除时兜底显示未分组', (tester) async {
@@ -526,7 +671,7 @@ class _FakeGroupDao implements DeviceGroupDao {
 class _FakeMeasurementDao implements MeasurementDao {
   _FakeMeasurementDao({this.latest = const {}, this.history = const []});
 
-  final Map<SensorType, Measurement> latest;
+  final Map<SensorKey, Measurement> latest;
   final List<Measurement> history;
 
   @override
@@ -538,19 +683,19 @@ class _FakeMeasurementDao implements MeasurementDao {
   @override
   Future<List<Measurement>> queryHistory({
     required int configId,
-    required SensorType type,
+    required SensorKey key,
     int? startTime,
     int? endTime,
   }) async => history;
 
   @override
-  Future<Map<SensorType, Measurement>> queryLatest(int configId) async =>
+  Future<Map<SensorKey, Measurement>> queryLatest(int configId) async =>
       latest;
 
   @override
   Future<List<Measurement>> queryByThreshold({
     required int configId,
-    required SensorType type,
+    required SensorKey key,
     int? maxValue,
     int? minValue,
   }) async => [];

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:sensor_hub/data/models/device_group.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/repositories/device_repository.dart';
 import 'package:sensor_hub/data/repositories/mqtt_repository.dart';
 import 'package:sensor_hub/data/dao/device_config_dao.dart';
@@ -22,7 +23,7 @@ class DeviceVM with ChangeNotifier {
   int get deviceCount => latestReadings.length;
   final Map<String, MqttService> _services = {};
   final Map<String, DeviceProfile> deviceProfiles = {}; // 设备名 → 配置
-  final Map<String, Map<SensorType, Measurement>> latestReadings = {}; // 设备名 → (传感器类型 → 最新读数)
+  final Map<String, Map<SensorKey, Measurement>> latestReadings = {}; // 设备名 → (传感器键 → 最新读数)
   List<DeviceGroup> groups = [];
   bool isLoading = false;
   bool _initializing = false;
@@ -396,7 +397,7 @@ class DeviceVM with ChangeNotifier {
       deviceProfiles[deviceConfig.deviceName] = DeviceProfile(
         configId: deviceConfig.configId!,
         deviceName: deviceConfig.deviceName,
-        sensors: const [],
+        sensors: const <SensorKey>[],
         payloadVersion: 1,
         groupId: deviceConfig.groupId
       );
@@ -419,9 +420,12 @@ class DeviceVM with ChangeNotifier {
         final readings = latestReadings[effectiveName];
         if (readings != null && readings.isNotEmpty) {
           logI('检测到 $effectiveName 收到有效数据，设备添加成功', tag: 'DeviceVM');
+          // 必须先完成 completer 再 notifyListeners：
+          // notifyListeners 会同步回调本监听器，若此时 completer 仍未完成，
+          // 会再次进入本函数 → 再次 notifyListeners → 无限递归 → Stack Overflow。
+          completer.complete(true);
           isLoading = false;
           notifyListeners();
-          completer.complete(true);
         }
       }
 
@@ -490,7 +494,7 @@ class DeviceVM with ChangeNotifier {
 
     final latest = latestReadings[config.deviceName] ?? {};
     for (final m in measurements) {
-      latest[m.sensorType] = m;
+      latest[m.key] = m;
     }
     latestReadings[config.deviceName] = latest;
 
@@ -583,14 +587,14 @@ class DeviceVM with ChangeNotifier {
     );
   }
 
-  /// 根据收到的 Measurement 自动推断设备搭载的传感器类型
-  /// 当探测到新的传感器类型组合时，自动更新 DeviceProfile
+  /// 根据收到的 Measurement 自动推断设备搭载的传感器组合
+  /// 当探测到新的传感器组合（物理量 + 通道）时，自动更新 DeviceProfile
   void _autoDetectProfile(DeviceConfig config, List<Measurement> measurements) {
     final deviceName = config.deviceName;
     final existingProfile = deviceProfiles[deviceName];
 
-    // 从新数据中提取传感器类型集合
-    final detectedSensors = measurements.map((m) => m.sensorType).toSet();
+    // 从新数据中提取传感器键集合
+    final detectedSensors = measurements.map((m) => m.key).toSet();
 
     if (existingProfile == null) {
       // 首次收到数据，新建 profile
@@ -629,8 +633,8 @@ class DeviceVM with ChangeNotifier {
     }
   }
 
-  /// 比较两个 SensorType 集合是否相同
-  bool _setEquals(Set<SensorType> a, Set<SensorType> b) {
+  /// 比较两个 SensorKey 集合是否相同
+  bool _setEquals(Set<SensorKey> a, Set<SensorKey> b) {
     return a.length == b.length && a.containsAll(b);
   }
 
@@ -644,13 +648,15 @@ class DeviceVM with ChangeNotifier {
     if (profile == null) return;
 
     for (final m in measurements) {
-      final threshold = profile.thresholds[m.sensorType];
+      final threshold = profile.thresholds[m.key];
       if (threshold == null) continue;
 
       if (m.value > threshold.maxValue || m.value < threshold.minValue) {
         logW(
-          '告警: ${config.deviceName} ${m.sensorType.displayName}=${m.formattedValue}'
-          '${m.sensorType.unit} 超出阈值 [${threshold.minValue}~${threshold.maxValue}]',
+          // 带上 key（如 temperature:external），告警日志能区分是哪一路通道
+          '告警: ${config.deviceName} ${m.key} (${m.sensorType.displayName})'
+          '=${m.formattedValue}${m.sensorType.unit} 超出阈值 '
+          '[${threshold.minValue}~${threshold.maxValue}]',
           tag: 'DeviceVM',
         );
         // TODO: 调用 NotificationMessageDao().insert(...) 写入通知表

@@ -1,3 +1,4 @@
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 
 // 窄表
@@ -6,6 +7,7 @@ class Measurement {
   final int? id;
   final int configId;
   final SensorType sensorType;
+  final SensorChannel channel;
   final int value;
   final int timestamp;
 
@@ -13,6 +15,7 @@ class Measurement {
     this.id,
     required this.configId,
     required this.sensorType,
+    this.channel = SensorChannel.primary,
     required this.value,
     required this.timestamp,
   });
@@ -20,11 +23,14 @@ class Measurement {
   // 格式化后的显示值，如 255 → "25.5"
   String get formattedValue => sensorType.formatValue(value);
 
+  SensorKey get key => SensorKey(sensorType, channel);
+
   // 转为数据库Map,字段与measurements表一致
   Map<String, dynamic> toMap() => {
     'id': id,
     'config_id': configId,
     'sensor_type': sensorType.name,
+    'sensor_channel': channel.name,
     'value': value,
     'timestamp': timestamp,
   };
@@ -37,6 +43,7 @@ class Measurement {
       sensorType: SensorTypeMeta.fromString(
         (map['sensor_type'] as String?) ?? '',
       ),
+      channel: SensorChannel.fromName(map['sensor_channel'] as String?),
       value: (map['value'] as int?) ?? 0,
       timestamp: (map['timestamp'] as int?) ?? 0,
     );
@@ -50,6 +57,7 @@ class Measurement {
       sensorType: SensorTypeMeta.fromString(
         (map['sensor_type'] as String?) ?? '',
       ),
+      channel: SensorChannel.fromName(map['sensor_channel'] as String?),
       value: (map['value'] as int?) ?? 0,
       timestamp: (map['timestamp'] as int?) ?? 0,
     );

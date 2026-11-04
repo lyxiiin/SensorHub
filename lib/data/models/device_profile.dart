@@ -1,4 +1,4 @@
-import 'package:sensor_hub/data/models/sensor_type.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/measurement.dart';
 
 class ThresholdConfig {
@@ -29,8 +29,8 @@ class DeviceProfile {
   final int configId;
   final String deviceName;
   final int? groupId;
-  final List<SensorType> sensors;
-  final Map<SensorType, ThresholdConfig> thresholds;
+  final List<SensorKey> sensors;
+  final Map<SensorKey, ThresholdConfig> thresholds;
   final int payloadVersion;
 
   const DeviceProfile({
@@ -42,22 +42,36 @@ class DeviceProfile {
     this.payloadVersion = 1,
   });
 
-  /// 将 sensors 列表序列化为 JSON 字符串（存入 device_configs 表）
+  /// 将 sensors 列表序列化为字符串（如 `[co2:primary, temperature:external]`）。
+  ///
+  /// 说明：当前没有调用点（DeviceProfile 由 device_latest 快照在内存中重建），
+  /// 保留该序列化能力是为了将来落库/调试时格式统一。
   String sensorsToJson() {
-    return sensors.map((s) => s.name).toList().toString();
+    return sensors.map((s) => s.storageName).toList().toString();
   }
 
-  /// 从 JSON 字符串反序列化 sensors 列表
-  static List<SensorType> sensorsFromJson(String json) {
+  /// 从 [sensorsToJson] 的格式反序列化。
+  ///
+  /// 兼容旧格式（如 `[temperature, humidity]`，无通道 → primary），
+  /// 由 [SensorKey.fromStorageName] 兜底。
+  static List<SensorKey> sensorsFromJson(String json) {
     // 简单处理：去除方括号和引号，按逗号分隔
-    final cleaned = json.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll(' ', '');
+    final cleaned = json
+        .replaceAll('[', '')
+        .replaceAll(']', '')
+        .replaceAll('"', '')
+        .replaceAll(' ', '');
     if (cleaned.isEmpty) return [];
-    return cleaned.split(',').map((name) => SensorTypeMeta.fromString(name)).toList();
+    return cleaned
+        .split(',')
+        .where((name) => name.isNotEmpty)
+        .map(SensorKey.fromStorageName)
+        .toList();
   }
 
   /// 检查某个 Measurement 是否超阈值
   bool isOverThreshold(Measurement measurement) {
-    final threshold = thresholds[measurement.sensorType];
+    final threshold = thresholds[measurement.key];
     if (threshold == null) return false;
     return measurement.value > threshold.maxValue ||
            measurement.value < threshold.minValue;

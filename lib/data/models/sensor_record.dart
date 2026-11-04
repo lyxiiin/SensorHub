@@ -1,4 +1,5 @@
 import 'package:sensor_hub/data/models/measurement.dart';
+import 'package:sensor_hub/data/models/sensor_channel.dart';
 import 'package:sensor_hub/data/models/sensor_type.dart';
 
 class SensorRecord{
@@ -49,39 +50,49 @@ class SensorRecord{
     );
   }
 
-    /// 宽表 → 窄表：拆分为多个 Measurement
+  /// 宽表列 → 数据通道。
+  ///
+  /// HTTP 历史接口返回的是宽表，温度/湿度只有单列，无法区分
+  /// SCD41（内部）与 SHT40（外部）两路来源；按重构方案 §3.3 的旧数据
+  /// 归属约定，统一落到 [SensorChannel.external]（环境值）。
+  /// 其余物理量不存在通道歧义，使用 [SensorChannel.primary]。
+  static const Map<SensorType, SensorChannel> _channelByType = {
+    SensorType.temperature: SensorChannel.external,
+    SensorType.humidity: SensorChannel.external,
+  };
+
+  /// 宽表 → 窄表：拆分为多个 Measurement
   List<Measurement> toMeasurements(int configId) {
-    final map = {
-      SensorType.co2: co2,
+    final values = <SensorType, double?>{
+      SensorType.carbon_dioxide: co2,
       SensorType.temperature: temperature,
       SensorType.humidity: humidity,
       SensorType.pm25: pm25,
       SensorType.pm10: pm10,
-      SensorType.voc: voc,
+      SensorType.volatile_organic_compounds: voc,
       SensorType.noise: noise,
-      SensorType.lux: lux,
-      SensorType.atmosPressure: atmosPressure,
+      SensorType.illuminance: lux,
+      SensorType.pressure: atmosPressure,
     };
 
     final results = <Measurement>[];
-    for (final entry in map.entries) {
+    for (final entry in values.entries) {
       final rawValue = entry.value;
       if (rawValue == null) continue;
 
       final sensorType = entry.key;
-      final storedValue = (rawValue * sensorType.storageScale).round();
-
       results.add(Measurement(
         configId: configId,
         sensorType: sensorType,
-        value: storedValue,
+        channel: _channelByType[sensorType] ?? SensorChannel.primary,
+        value: (rawValue * sensorType.storageScale).round(),
         timestamp: timestamp,
       ));
     }
     return results;
   }
 
-    static double? _toDouble(dynamic value) {
+  static double? _toDouble(dynamic value) {
     if (value == null) return null;
     if (value is double) return value;
     if (value is int) return value.toDouble();
